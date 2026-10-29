@@ -1,0 +1,5 @@
+experiment_id,scene_group,path,model,backend,seed,n,no_obstacle_cases,infer_max_points,warmup_per_group,batches,mean_ms,median_ms,p95_ms,timer
+EXP-FAST-V16,mixed,reference,v16 champion,numpy,2026,90,21,256,6,6,160.76390777727485,135.66324999555945,384.86967499338783,outer_complete_solve_record_trajectory_true
+EXP-FAST-V16,mixed,optimized,v16 champion,numpy,2026,90,21,256,6,6,57.74800666614384,52.41059999389108,139.59536999609554,outer_complete_solve_record_trajectory_true
+EXP-FAST-V16,free,reference,v16 champion,numpy,2027,42,42,256,6,6,101.5561071489217,65.40370000584517,244.25094501348212,outer_complete_solve_record_trajectory_true
+EXP-FAST-V16,free,optimized,v16 champion,numpy,2027,42,42,256,6,6,23.847961900866636,15.460399998119101,54.79821499902754,outer_complete_solve_record_trajectory_true

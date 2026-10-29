@@ -1,0 +1,11 @@
+experiment_id,model,scene_group,seed,n,criterion,success_count,success_rate_percent,trajectory_collision_count,trajectory_collision_percent,evidence_level
+EXP-HYBRID-V15,PPO,mixed,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,863,86.3,57,5.7,recomputed_from_episode_fields
+EXP-HYBRID-V15,PPO,obstacle_subset,2026,764,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,645,84.42408376963351,57,7.460732984293194,recomputed_from_episode_fields
+EXP-HYBRID-V15,PPO+DLS,mixed,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,903,90.3,57,5.7,recomputed_from_episode_fields
+EXP-HYBRID-V15,PPO+DLS,obstacle_subset,2026,764,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,673,88.08900523560209,57,7.460732984293194,recomputed_from_episode_fields
+EXP-HYBRID-V15,PPO,free,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,886,88.6,0,0.0,recomputed_from_episode_fields
+EXP-HYBRID-V15,PPO+DLS,free,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,961,96.1,0,0.0,recomputed_from_episode_fields
+EXP-DEPLOY-V30,v30 best,obstacles,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,,87.3,,7.9,aggregate_log_only
+EXP-DEPLOY-V30,v30 best,free,2026,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,,93.89999999999999,,0.0,aggregate_log_only
+EXP-DEPLOY-V30,v30 best,obstacles,30303,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,,85.2,,7.9,aggregate_log_only
+EXP-DEPLOY-V30,v30 best,free,30303,1000,position<10mm;orientation<10deg;terminal+recorded_trajectory_zero_collision,,93.5,,0.0,aggregate_log_only
