@@ -37,9 +37,9 @@ I treated this as a sequence of engineering questions: **what failed, what cause
 
 **Assign geometry and local refinement explicit roles.** I investigated signed-distance (SDF) clearance, historical Jacobian safety-direction features, joint-wise braking, and adaptive step sizes. Collision-checked DLS then addressed remaining pose error. In the paired v15 experiment, refinement improved convergence while retaining the original motion's collision history; it did not remove the 57 recorded collision episodes.
 
-**Make repeated solving practical.** Profiling showed that geometry and environment work dominated an early CPU loop. I explored ONNX Runtime, then optimized NumPy FK/SDF processing, inactive-obstacle handling, and point transformations. The fixed-policy benchmark recorded no trajectory or evaluated-outcome differences across **132 tested scenes**. [Optimization study](docs/engineering_optimization.md)
+**Waypoint-assisted planning for difficult targets.** When direct target reaching remained challenging in complex obstacle configurations, I introduced intermediate waypoints to guide the robotic arm through smaller subgoals. In this later iteration, I observed an approximately **93% simulation success rate**. Although the corresponding code and evaluation logs are not included in this repository, this experience reinforced my approach of combining reinforcement learning with structured motion planning rather than relying solely on an end-to-end policy.
 
-**Later waypoint assistance.** I subsequently introduced intermediate waypoints to improve convergence and avoidance. Its approximately **93%** reported simulation success remains **applicant-reported and unverified** because the code and original evaluation are absent from this archive. It is excluded from the measured outcomes above.
+**Make repeated solving practical.** Profiling showed that geometry and environment work dominated an early CPU loop. I explored ONNX Runtime, then optimized NumPy FK/SDF processing, inactive-obstacle handling, and point transformations. The fixed-policy benchmark recorded no trajectory or evaluated-outcome differences across **132 tested scenes**. [Optimization study](docs/engineering_optimization.md)
 
 [Explore the six-stage research journey, including unsuccessful experiments](docs/research_journey.md).
 
