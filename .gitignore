@@ -1,0 +1,70 @@
+# Internal evidence, review notes, packaging reports, and local candidates.
+# Manual folder uploads do not honor this file; use the explicit package allowlist.
+/private_review/
+
+# Unreviewed recordings and capture output. Approved media needs a separate review
+# and an explicit publication-manifest update before it is added to a package.
+/captures/
+/raw_media/
+/demo/captures/
+/demo/raw_media/
+/demo/recordings/
+/demo/capture_outputs/
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.m4v
+*.mpeg
+*.mpg
+*.wmv
+*.flv
+*.gif
+# The user approved this one original, uncut simulation recording for inclusion.
+# This filename exception does not approve other media or resolve company rights.
+!/assets/media/robot_arm_simulation.mp4
+
+# Original research archives, policies, raw experiment output, and robot assets
+# are outside this documentation package's current publication scope.
+models/
+checkpoints/
+logs/
+raw_logs/
+vendor/
+urdf/
+meshes/
+*.zip
+*.7z
+*.tar
+*.gz
+*.onnx
+*.pt
+*.pth
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.bag
+*.mcap
+*.db3
+*.log
+
+# Environments, caches, editor state, and temporary exports.
+.qa-browser/
+.venv/
+venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.cache/
+*.py[cod]
+*.tmp
+*.bak
+*.docx
+*.pdf
+~$*
+.DS_Store
+Thumbs.db
