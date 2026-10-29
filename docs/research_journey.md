@@ -42,11 +42,9 @@ Here, trajectory-safe success means position error below **10 mm**, orientation 
 
 ## 4. Waypoint-Assisted Improvement
 
-In a later iteration, I introduced intermediate waypoints to help the arm make progress toward difficult targets while negotiating obstacles. Conceptually, this addressed a limitation of asking a single target-directed solve to manage the entire motion at once.
+In a later iteration, I introduced intermediate waypoints to guide the robotic arm toward difficult targets while navigating obstacles. Instead of relying on a single target-directed solution, waypoint assistance provided a more structured approach to handling complex motion-planning tasks.
 
-**This extension is applicant-reported.** Its implementation and original evaluation records are absent from the archive reviewed for this portfolio. The reported success rate of **approximately 93%** has therefore **not been independently verified** and is excluded from the verified results.
-
-The extension remains part of the research journey, but its implementation and test protocol cannot be reconstructed from the available material. **Evidence status: `REPORT-WAYPOINT`.**
+This later version achieved approximately 93% simulation success according to my project records at the time. However, its original implementation and evaluation logs are not included in the current archive. I therefore present this result as a reported outcome rather than a directly verified benchmark, and do not compare it numerically with the archived v15 and v30 experiments.
 
 ## 5. Profiling the complete solver
 
