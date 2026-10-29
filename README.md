@@ -16,6 +16,11 @@ A robotics research and engineering project developed during my algorithm intern
 
 Here, **trajectory-safe success** requires position error <10 mm, orientation error <10°, and zero terminal or recorded-trajectory obstacle collisions. These are separate simulation experiments, not one continuous improvement curve. [Results and protocols](docs/experimental_results.md)
 
+
+
+https://github.com/user-attachments/assets/97459db6-6a42-44b3-a404-928d451b7335
+
+
 **[▶ Watch the original simulation recording — 37 seconds](assets/media/robot_arm_simulation.mp4)**
 
 The unedited historical recording shows the RL/DLS comparison, obstacle scenes, and on-screen pose/collision metrics. Its exact checkpoint is not identified; it illustrates the software rather than establishing the benchmark results above. [Demo context](demo/README.md)
