@@ -42,9 +42,13 @@ Here, trajectory-safe success means position error below **10 mm**, orientation 
 
 ## 4. Waypoint-Assisted Improvement
 
-In a later iteration, I introduced intermediate waypoints to guide the robotic arm toward difficult targets while navigating obstacles. Instead of relying on a single target-directed solution, waypoint assistance provided a more structured approach to handling complex motion-planning tasks.
+I used a two-dimensional success-rate heatmap to examine how performance varied with the initial end-effector-to-target distance and initial orientation difference. The distribution was uneven. Within the same **120–130°** initial orientation-difference range, success was **89.7%** at **0.3–0.4 m**, compared with **75.0%** at **1.1–1.2 m**. This showed an association between greater initial distance and lower success in the sampled tasks; it did not establish that distance caused the failures.
 
-This later version achieved approximately 93% simulation success according to my project records at the time. However, its original implementation and evaluation logs are not included in the current archive. I therefore present this result as a reported outcome rather than a directly verified benchmark, and do not compare it numerically with the archived v15 and v30 experiments.
+That pattern led me to hypothesize that continuously pursuing a distant final target could make pose convergence and obstacle avoidance harder to balance. I wanted to test whether a more structured sequence of targets could make these difficult motions easier to solve.
+
+I therefore introduced intermediate waypoints in a later research iteration, dividing longer target-reaching motions into smaller subgoals. My aim was to improve the stability of local solves and obstacle avoidance while progressing toward the final pose.
+
+My project records report approximately **93% simulation success** for that later version. Its original code and complete evaluation records are not included in this repository, so this remains a reported project outcome rather than an independently revalidated benchmark. I do not treat it as a direct comparison with the separate v15 or v30 experiments.
 
 ## 5. Profiling the complete solver
 
