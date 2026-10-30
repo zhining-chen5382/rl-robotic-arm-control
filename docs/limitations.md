@@ -30,14 +30,14 @@ The applicant also reports a historical waypoint-based method with approximately
 - The retained records do not establish consistent gains across multiple independent training seeds. Small differences between later variants should not be presented as statistically significant improvements.
 - Some later files contain aggregate summaries without the underlying per-case trajectories. Their recorded metrics can be checked for consistency, but the complete numerator cannot be independently reconstructed from those files alone.
 - Historical snapshots, exact package environments, hardware metadata, and some original experiment artifacts are incomplete. Later source code may not exactly reconstruct every historical run.
-- No training, inference benchmark, or hardware experiment was rerun to produce this portfolio. Documentation of a test or a retained run is distinguished from a new reproduction.
+- The historical training runs, population success-rate evaluations, and timing benchmarks have not been rerun for this source candidate. Small application checks are reported separately in [Source changes and validation](source_release.md); they do not revalidate those historical results.
 
 The [optimization study](engineering_optimization.md) therefore uses a specifically identified paired comparison and limits its equivalence claim to the 132 evaluated scene pairs. It does not combine measurements from different policies and protocols into one speedup.
 
 ## Public-release boundary
 
-This repository is a curated engineering portfolio. It does not redistribute application source, checkpoints, raw experiment archives, robot meshes, or registration materials whose ownership and release status have not been resolved. My independent development of the integration application does not establish permission to redistribute every underlying component or asset.
+This is a curated source candidate. The related algorithm source has my supervisor's publication permission, and the v30 best inference checkpoint has been approved for inclusion. Other historical checkpoints, raw internal experiment archives, registration materials, and UR5 assets are excluded. My independent development of the integration application does not establish ownership of third-party components; see [Third-party provenance](../THIRD_PARTY_NOTICES.md).
 
-Public release of an executable research package would require resolving those rights and assembling a versioned source/configuration/model manifest with a reproducible environment. The current [demo page](../demo/README.md) includes an original archived screen recording, with its exact checkpoint left unidentified. It is not an installable simulator release or a new evaluation of the documented v30 deployment.
+The [main source guide](../code/README.md) identifies the included model, configuration, environment, and four supported methods. Historical snapshots are not all self-contained executable experiments. The bundled Panda resources have been matched to the PyBullet 3.2.5 distribution; no upstream Git revision is invented. The [archived screen recording](../demo/README.md) retains an unidentified checkpoint; adding current source does not retroactively establish the recording's model version.
 
 [Project overview](../README.md) · [Methodology](methodology.md) · [Experimental results](experimental_results.md) · [Engineering optimization](engineering_optimization.md) · [Software demonstration](../demo/README.md)

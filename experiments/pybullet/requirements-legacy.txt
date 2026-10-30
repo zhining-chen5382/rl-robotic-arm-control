@@ -1,0 +1,18 @@
+# Documentary dependency recipe for the frozen PyBullet research archive.
+# NOT a newly tested environment lock; no installation was performed.
+# Use an isolated environment rather than changing the current application's.
+#
+# PointNet/residual ZIP system_info.txt records Windows, Python 3.11.15,
+# NumPy 2.4.6, Gymnasium 1.3.0, SB3 2.9.0, Cloudpickle 3.1.2,
+# and PyTorch 2.12.1+cpu. The base pose ZIP instead records Linux,
+# Python 3.13.12, NumPy 2.3.5, and PyTorch 2.12.1+cu130.
+# This documents the residual-side versions, not cross-platform compatibility.
+numpy==2.4.6
+gymnasium==1.3.0
+stable-baselines3==2.9.0
+cloudpickle==3.1.2
+# The appropriate CPU/platform wheel source must be selected separately.
+torch==2.12.1
+# Versions for these packages were not captured by the retained model metadata.
+pybullet
+tensorboard

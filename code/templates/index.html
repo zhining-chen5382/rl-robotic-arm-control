@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franka Panda 七自由度避障 IK 研究系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; overflow: hidden; }
+        
+        #container { display: flex; width: 100vw; height: 100vh; }
+        #canvas-container { flex: 1; position: relative; }
+        #canvas-container canvas { display: block; }
+        
+        #control-panel {
+            width: 360px; background: #16213e; padding: 20px;
+            overflow-y: auto; border-left: 2px solid #0f3460;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        #control-panel h1 { font-size: 18px; color: #e94560; text-align: center; margin-bottom: 5px; }
+        #control-panel h2 { font-size: 14px; color: #a8d8ea; margin-bottom: 8px; border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
+        
+        .control-group { background: #0f3460; border-radius: 8px; padding: 12px; }
+        .input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .input-row label { width: 30px; font-weight: bold; font-size: 13px; }
+        .input-row input[type="range"] { flex: 1; }
+        .input-row input[type="number"] { width: 70px; background: #1a1a2e; border: 1px solid #e94560; color: #eee;
+            border-radius: 4px; padding: 4px 6px; font-size: 13px; text-align: center; }
+        
+        .btn {
+            width: 100%; padding: 10px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 14px; font-weight: bold; transition: all 0.3s;
+        }
+        .btn-primary { background: #e94560; color: white; }
+        .btn-primary:hover { background: #ff6b6b; transform: translateY(-1px); }
+        .btn-secondary { background: #533483; color: white; }
+        .btn-secondary:hover { background: #7b68ee; }
+        .btn-row { display: flex; gap: 8px; }
+        .btn-row .btn { flex: 1; }
+        .file-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .file-action {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+            min-height: 62px; padding: 10px 12px; border: 1px solid #365875;
+            border-radius: 7px; background: #183e62; color: #e6f1fa;
+            font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+            text-align: left; transition: background .15s, border-color .15s;
+        }
+        .file-action:hover { background: #234e73; border-color: #81bad5; }
+        .file-action:focus-visible { outline: 2px solid #a8d8ea; outline-offset: 2px; }
+        .file-action small { font-size: 10px; font-weight: 400; color: #a8c4da; letter-spacing: .3px; }
+        .file-action.result { background: #263c61; border-color: #465579; }
+        .file-action.result:hover { background: #344c75; border-color: #a2aed7; }
+        #file-status { font-size: 11px; line-height: 1.6; color: #b5d6e7; }
+        #file-status:not(:empty) { margin-top: 8px; }
+        
+        .method-select {
+            width: 100%; padding: 8px; background: #1a1a2e; border: 1px solid #533483;
+            color: #eee; border-radius: 4px; font-size: 13px;
+        }
+        
+        #status { background: #0f3460; border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.8; }
+        #status .label { color: #a8d8ea; }
+        #status .value { color: #e94560; font-weight: bold; font-family: monospace; }
+        #status .success { color: #4ade80; }
+        #status .fail { color: #f87171; }
+        
+        #info-overlay {
+            position: absolute; top: 15px; left: 15px; background: rgba(22,33,62,0.9);
+            padding: 10px 15px; border-radius: 8px; font-size: 12px; color: #a8d8ea;
+            pointer-events: none;
+        }
+        
+        #loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            font-size: 18px; color: #e94560; z-index: 100;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #0f3460; border-top-color: #e94560;
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .animating { pointer-events: none; opacity: 0.6; }
+        #rl-train-group, #jac-mode-group { display: none !important; }
+    </style>
+</head>
+<body>
+<div id="container">
+    <div id="canvas-container">
+        <div id="loading"><div class="spinner"></div>正在加载机械臂模型...</div>
+        <div id="info-overlay">
+            鼠标左键: 旋转 | 滚轮: 缩放 | 右键: 平移<br>
+            点击画布设置目标点 (z=0.5 平面) | 或在右侧面板输入坐标
+        </div>
+    </div>
+    
+    <div id="control-panel">
+        <h1 id="app-title">Franka Panda 七自由度避障 IK 研究系统</h1>
+        <p style="text-align:center;font-size:11px;color:#aaa;" id="app-subtitle">Panda 运动学仿真；左右为同一场景的算法对比，非双臂协同</p>
+        <div id="deployment-info" style="font-size:11px;line-height:1.6">正在读取模型配置…</div>
+        <div class="control-group">
+            <h2>场景与实验文件</h2>
+            <div class="file-actions">
+                <button class="file-action" id="save-scene"><span>保存场景</span><small>JSON · 测试条件</small></button>
+                <button class="file-action" id="load-scene"><span>加载场景</span><small>JSON · 恢复配置</small></button>
+                <button class="file-action result" id="export-results"><span>导出实验</span><small>JSON · 完整记录</small></button>
+                <button class="file-action result" id="export-csv"><span>导出指标</span><small>CSV · 数据表格</small></button>
+            </div>
+            <input type="file" id="scene-file" accept=".json" hidden>
+            <div id="file-status" role="status"></div>
+        </div>
+        
+        <!-- 机械臂选择 -->
+        <div class="control-group">
+            <h2>研究机械臂（固定 Panda）</h2>
+            <select id="robot-select" class="method-select" disabled>
+                <option value="panda">Franka Panda (7轴)</option>
+            </select>
+        </div>
+        
+        <!-- 目标位置输入 -->
+        <div class="control-group">
+            <h2>目标位置</h2>
+            <div class="input-row">
+                <label style="color:#f87171">X</label>
+                <input type="number" id="target-x" value="0.4" step="0.05" min="-1" max="1">
+                <input type="range" id="target-x-range" value="0.4" min="-1" max="1" step="0.01">
+            </div>
+            <div class="input-row">
+                <label style="color:#4ade80">Y</label>
+                <input type="number" id="target-y" value="0.0" step="0.05" min="-1" max="1">
+                <input type="range" id="target-y-range" value="0.0" min="-1" max="1" step="0.01">
+            </div>
+            <div class="input-row">
+                <label style="color:#60a5fa">Z</label>
+                <input type="number" id="target-z" value="0.5" step="0.05" min="0" max="1.2">
+                <input type="range" id="target-z-range" value="0.5" min="0" max="1.2" step="0.01">
+            </div>
+        </div>
+        
+        <!-- 目标姿态 (RPY) -->
+        <div class="control-group" id="orientation-group">
+            <h2>目标姿态 (RPY°)</h2>
+            <div class="input-row">
+                <label style="color:#f87171">R</label>
+                <input type="number" id="target-roll" value="0" step="5" min="-180" max="180">
+                <input type="range" id="target-roll-range" value="0" min="-180" max="180" step="1">
+            </div>
+            <div class="input-row">
+                <label style="color:#4ade80">P</label>
+                <input type="number" id="target-pitch" value="0" step="5" min="-180" max="180">
+                <input type="range" id="target-pitch-range" value="0" min="-180" max="180" step="1">
+            </div>
+            <div class="input-row">
+                <label style="color:#60a5fa">Y</label>
+                <input type="number" id="target-yaw" value="0" step="5" min="-180" max="180">
+                <input type="range" id="target-yaw-range" value="0" min="-180" max="180" step="1">
+            </div>
+        </div>
+        
+        <!-- IK求解方法 -->
+        <div class="control-group">
+            <h2>IK求解方法 (左臂)</h2>
+            <div style="font-size:11px;color:#888;margin-bottom:6px;">
+                左侧所选方法，右侧 DLS 对照；左侧选 DLS 时右侧为零空间避障。
+            </div>
+            <select id="ik-method" class="method-select">
+                <option value="rl_avoid" selected>RL 避障 (PPO collision-aware)</option>
+                <option value="rl_avoid_dls">RL 避障 + DLS 精调 (混合推理)</option>
+                <option value="dls_avoid">DLS (不避障, 对照组)</option>
+                <option value="nullspace">零空间避障 (斥力势场)</option>
+            </select>
+            <div style="margin-top:8px;font-size:11px;color:#888;line-height:1.6;" id="method-desc">
+            </div>
+        </div>
+        
+        <!-- 雅可比矩阵来源 -->
+        <div class="control-group" id="jac-mode-group">
+            <h2>雅可比矩阵来源</h2>
+            <div style="display:flex;gap:10px;margin-top:5px;">
+                <label style="font-size:12px;cursor:pointer;">
+                    <input type="radio" name="jac-mode" value="pybullet" checked>
+                    pybullet内置
+                </label>
+                <label style="font-size:12px;cursor:pointer;">
+                    <input type="radio" name="jac-mode" value="manual">
+                    自己计算 (几何法)
+                </label>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:#888;line-height:1.6;" id="jac-desc">
+                调用pybullet的calculateJacobian，内部用自动微分
+            </div>
+        </div>
+        
+        <!-- 障碍物控制 -->
+        <div class="control-group" id="obstacle-group">
+            <h2>障碍物 <span id="obstacle-count-badge" style="float:right;font-size:11px;color:#f87171;">0 个</span></h2>
+            <div class="input-row">
+                <label style="width:50px;font-size:12px;">数量</label>
+                <select id="obstacle-count" class="method-select" style="flex:1;">
+                    <option value="1">1 个</option>
+                    <option value="2">2 个</option>
+                    <option value="3" selected>3 个</option>
+                </select>
+            </div>
+            <div class="btn-row" style="margin-top:8px;">
+                <button class="btn btn-primary" id="btn-add-obstacles" style="background:#b45309;">随机生成</button>
+                <button class="btn btn-secondary" id="btn-clear-obstacles" style="background:#444;">清除</button>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#888;line-height:1.6;">
+                障碍物沿基座→目标走廊随机采样，两侧场景同步显示。<br>
+                点“求解IK”两臂同时求解, 对比避障效果。
+            </div>
+            <div id="obstacle-list" style="margin-top:6px;font-size:11px;color:#aaa;font-family:monospace;"></div>
+        </div>
+
+        <!-- RL 训练控制 -->
+        <div class="control-group" id="rl-train-group" style="display:none;">
+            <h2>RL 模型训练</h2>
+            <div style="font-size:11px;color:#888;margin-bottom:8px;" id="rl-model-status">检测模型状态中...</div>
+            <button class="btn btn-secondary" id="btn-train-rl" style="background:#0f766e;">训练 RL 模型 (PPO)</button>
+            <div style="font-size:11px;color:#888;margin-top:5px;" id="rl-train-progress"></div>
+        </div>
+        
+        <!-- 动画选项 -->
+        <div style="padding:0 5px;">
+            <label style="font-size:12px;cursor:pointer;">
+                <input type="checkbox" id="animate-path" checked> 显示运动轨迹动画
+            </label>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btn-solve">求解IK</button>
+            <button class="btn btn-secondary" id="btn-reset">重置</button>
+        </div>
+        
+        <!-- 自动演示模式 -->
+        <div class="control-group">
+            <h2>自动演示</h2>
+            <div style="font-size:11px;color:#888;margin-bottom:8px;">
+                使用随软件提供的固定案例集进行算法对比；不保证成功，也不代表总体成功率。<br>
+                正式评测采样起始位停 5 秒, 终止位停 8 秒, 方便观察。
+            </div>
+            <div style="margin-bottom:8px;">
+                <label style="font-size:12px;cursor:pointer;display:block;">
+                    <input type="radio" name="move-mode" value="smooth" checked> 各轴平滑移动 (默认)
+                </label>
+                <label style="font-size:12px;cursor:pointer;display:block;margin-top:3px;">
+                    <input type="radio" name="move-mode" value="instant"> 瞬间跳转到位
+                </label>
+            </div>
+            <button class="btn btn-secondary" id="btn-auto-demo" style="background:#7c3aed;">开始自动演示</button>
+            <div style="font-size:11px;color:#888;margin-top:5px;" id="auto-demo-status"></div>
+        </div>
+        
+        <!-- 关节角度显示 -->
+        <div class="control-group">
+            <h2>关节角度 (左臂)</h2>
+            <div id="joint-angles" style="font-family:monospace;font-size:12px;line-height:1.8;"></div>
+        </div>
+        
+        <!-- 状态信息 (双臂对比) -->
+        <div id="status">
+            <h2>状态信息 (对比)</h2>
+            <table style="width:100%;font-size:12px;border-collapse:collapse;">
+                <tr style="color:#666;">
+                    <td style="padding:2px 0;"></td>
+                    <td id="stat-method-l" style="color:#4ade80;font-weight:bold;text-align:center;">左: RL 避障</td>
+                    <td id="stat-method-r" style="color:#f87171;font-weight:bold;text-align:center;">右: DLS</td>
+                </tr>
+                <tr><td class="label">求解状态</td><td class="value" id="st-status-l" style="text-align:center;">-</td><td class="value" id="st-status-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">位置误差</td><td class="value" id="st-poserr-l" style="text-align:center;">-</td><td class="value" id="st-poserr-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">姿态误差</td><td class="value" id="st-orierr-l" style="text-align:center;">-</td><td class="value" id="st-orierr-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">最小距离</td><td class="value" id="st-mindist-l" style="text-align:center;">-</td><td class="value" id="st-mindist-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">终态碰撞</td><td class="value" id="st-coll-l" style="text-align:center;">-</td><td class="value" id="st-coll-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">轨迹碰撞</td><td class="value" id="st-trajcoll-l" style="text-align:center;">-</td><td class="value" id="st-trajcoll-r" style="text-align:center;">-</td></tr>
+                <tr><td class="label">耗时</td><td class="value" id="st-time-l" style="text-align:center;">-</td><td class="value" id="st-time-r" style="text-align:center;">-</td></tr>
+            </table>
+        </div>
+        
+        <!-- 实时求解统计 -->
+        <div class="control-group">
+            <h2>求解统计 <button id="reset-stats" style="font-size:10px;padding:2px 6px;cursor:pointer;float:right;background:#444;color:#aaa;border:1px solid #555;border-radius:3px;">重置</button></h2>
+            <div id="log-stats" style="font-size:12px;color:#ccc;padding:8px;background:#1a1a1a;border-radius:4px;line-height:1.8;">
+                <div><span style="color:#666">数据量: </span><span id="log-stats-count">0 条</span> &nbsp; <span style="color:#666">成功率: </span><span id="log-stats-success" style="color:#4ade80">-</span></div>
+                <div><span style="color:#666">误差(mm): </span><span id="log-stats-error" style="color:#fbbf24">-</span></div>
+                <div><span style="color:#666">耗时(ms): </span><span id="log-stats-time" style="color:#60a5fa">-</span></div>
+            </div>
+        </div>
+        
+        <!-- 预设位置 -->
+        <div class="control-group">
+            <h2>预设目标点</h2>
+            <div class="btn-row" style="flex-wrap:wrap;gap:5px;" id="preset-buttons">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+                "three": "/static/vendor/three/build/three.module.js",
+                "three/addons/": "/static/vendor/three/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+// ========== 全局变量 ==========
+let scene, camera, renderer, controls;
+let eeMarker, targetMarker, groundPlane, pathEETrail;
+let targetTriad, eeTriad;  // 目标/末端姿态三轴标记
+let isAnimating = false;
+let isSolving = false;
+let currentRobotInfo = null;  // 当前机器人元信息
+let currentObstacles = [];    // 当前障碍物规格 [{shape,pos,size}]
+let loadedStartQ = null;
+let loadedTargetQuat = null;
+let experimentResults = [];
+let deploymentInfo = null;
+function downloadFile(name, contents, type) {
+    const url = URL.createObjectURL(new Blob([contents], {type}));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function portableScene() {
+    return {schema_version:1, robot_id:'panda', target_pos:getTargetValues(),
+        target_rpy:getTargetRPY(), target_quat:loadedTargetQuat,
+        start_q:loadedStartQ, obstacles:currentObstacles,
+        method:document.getElementById('ik-method').value};
+}
+document.getElementById('save-scene').onclick = () => {
+    downloadFile('scene.json', JSON.stringify(portableScene(), null, 2), 'application/json');
+};
+document.getElementById('load-scene').onclick = () => document.getElementById('scene-file').click();
+document.getElementById('scene-file').onchange = async e => {
+    try {
+        if (autoDemoRunning || isSolving || isAnimating) throw new Error('请先停止演示并等待求解或动画完成');
+        const file = e.target.files[0]; if (!file) return;
+        if (file.size > 2*1024*1024) throw new Error('场景文件不能大于2MB');
+        const resp = await fetch('/api/validate_scene', {method:'POST',
+            headers:{'Content-Type':'application/json'}, body:await file.text()});
+        const s = await resp.json(); if (!resp.ok) throw new Error(s.error || '场景无效');
+        setTargetValues(...s.target_pos); setTargetRPY(...s.target_rpy);
+        loadedStartQ = s.start_q || null; loadedTargetQuat = s.target_quat || null;
+        currentObstacles = s.obstacles; renderObstacles();
+        document.getElementById('ik-method').value = s.method;
+        document.getElementById('ik-method').dispatchEvent(new Event('change'));
+        updateTargetMarker(s.target_pos, loadedTargetQuat || rpyToQuaternion(s.target_rpy));
+        const fk = await (await fetch(loadedStartQ ? '/api/forward_kinematics' : '/api/reset', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:loadedStartQ ? JSON.stringify({joint_angles:loadedStartQ}) : '{}'})).json();
+        updateRobotPose(fk.link_transforms);
+        document.getElementById('file-status').textContent = '场景已加载；起点、目标与障碍物已恢复';
+    } catch(err) { document.getElementById('file-status').textContent = '加载失败：'+err.message; }
+    finally {e.target.value = '';}
+};
+document.getElementById('export-results').onclick = () => downloadFile('experiments.json',
+    JSON.stringify({schema_version:1, deployment:deploymentInfo, experiments:experimentResults}, null, 2), 'application/json');
+document.getElementById('export-csv').onclick = () => {
+    const columns = ['method','success','position_error_mm','orientation_error_deg','n_collisions','trajectory_collisions','solve_time_ms'];
+    const rows = experimentResults.map(e => {const r=e.result; return [e.scene.method,r.success,r.position_error*1000,
+        r.orientation_error_deg,r.n_collisions,r.trajectory_collisions,r.solve_time_ms].join(',');});
+    downloadFile('metrics.csv', '\uFEFF'+[columns.join(','),...rows].join('\r\n'), 'text/csv;charset=utf-8');
+};
+fetch('/api/software_info').then(r=>r.json()).then(info => {
+    deploymentInfo=info;
+    document.getElementById('deployment-info').textContent =
+        '模型：v30 best；PPO上限150步，混合可追加DLS精调。成功：'+info.success_rule+'。'+info.collision_scope;
+}).catch(err=>document.getElementById('deployment-info').textContent=err.message);
+let obstacleMeshes = [];      // Three.js 障碍物 mesh 列表
+
+// ========== 双臂对比场景 ==========
+const DUAL_OFF3 = [0, 0, 1.1];                // 右场景平移量 (three 坐标 z)
+const SIDES = ['l', 'r'];
+const robots = {
+    l: { container: null, linkMeshes: {}, jointSpheres: {}, linkCylinders: [],
+         eeMarker: null, eeTriad: null, label: null, method: 'rl_avoid' },
+    r: { container: null, linkMeshes: {}, jointSpheres: {}, linkCylinders: [],
+         eeMarker: null, eeTriad: null, label: null, method: 'dls_avoid' },
+};
+let targetMarkerR = null, targetTriadR = null;  // 右场景目标标记
+
+function sideOffset(side) { return side === 'l' ? [0, 0, 0] : DUAL_OFF3; }
+
+// ========== 坐标系转换 ==========
+function pyPosToThree(pos) { return [pos[0], pos[2], -pos[1]]; }
+function threePosToPy(pos) { return [pos[0], -pos[2], pos[1]]; }
+function pyQuatToThree(q) {
+    // PyBullet (Z-up, xyzw) -> three.js (Y-up, xyzw), 与 pyPosToThree 配套
+    // 注意: 这是"物体摆放"变换而非坐标基共轭 —— OBJ 顶点/marker 轴向仍是 Z-up 数值,
+    // 世界变换 T_three = A·T_py, 旋转部分 R_three = A·R_py, 即左乘 q_A (绕X轴-90°): q_out = q_A ⊗ q_py
+    const s = -0.7071067811865475, c = 0.7071067811865475;
+    return [s*q[3]+c*q[0], c*q[1]-s*q[2], c*q[2]+s*q[1], c*q[3]-s*q[0]];
+}
+
+// ========== 障碍物 3D 渲染 ==========
+function obstacleMaterial() {
+    return new THREE.MeshStandardMaterial({
+        color: 0xd94040, transparent: true, opacity: 0.65,
+        roughness: 0.5, metalness: 0.1,
+    });
+}
+
+function addObstacleToScene(spec) {
+    let geo;
+    if (spec.shape === 'box') {
+        const he = spec.size.halfExtents;
+        geo = new THREE.BoxGeometry(he[0]*2, he[1]*2, he[2]*2);
+    } else if (spec.shape === 'sphere') {
+        geo = new THREE.SphereGeometry(spec.size.radius, 24, 16);
+    } else {  // cylinder
+        geo = new THREE.CylinderGeometry(spec.size.radius, spec.size.radius,
+                                         spec.size.height, 24);
+    }
+    const p3 = pyPosToThree(spec.pos);
+    for (const side of SIDES) {
+        const off = sideOffset(side);
+        const mesh = new THREE.Mesh(geo, obstacleMaterial());
+        mesh.position.set(p3[0] + off[0], p3[1] + off[1], p3[2] + off[2]);
+        mesh.castShadow = true;
+        scene.add(mesh);
+        obstacleMeshes.push(mesh);
+    }
+}
+
+function clearObstacleMeshes() {
+    for (const m of obstacleMeshes) {
+        scene.remove(m);
+        m.geometry.dispose();
+        m.material.dispose();
+    }
+    obstacleMeshes = [];
+}
+
+function renderObstacles() {
+    clearObstacleMeshes();
+    for (const spec of currentObstacles) addObstacleToScene(spec);
+    refreshObstacleUI();
+}
+
+function refreshObstacleUI() {
+    document.getElementById('obstacle-count-badge').textContent =
+        currentObstacles.length + ' 个';
+    const listEl = document.getElementById('obstacle-list');
+    listEl.innerHTML = currentObstacles.map((o, i) =>
+        `#${i+1} ${o.shape} @ (${o.pos.map(v => v.toFixed(2)).join(', ')})`
+    ).join('<br>');
+}
+
+async function generateRandomObstacles() {
+    const count = parseInt(document.getElementById('obstacle-count').value);
+    const targetPos = getTargetValues();
+    try {
+        const resp = await fetch('/api/generate_obstacles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: count, target_pos: targetPos, start_q: loadedStartQ })
+        });
+        const data = await resp.json();
+        if (data.error) { alert('生成障碍物失败: ' + data.error); return; }
+        currentObstacles = data.obstacles || [];
+        renderObstacles();
+    } catch (err) {
+        console.error('生成障碍物错误:', err);
+        alert('生成障碍物失败: ' + err.message);
+    }
+}
+
+function clearObstacles() {
+    currentObstacles = [];
+    clearObstacleMeshes();
+    refreshObstacleUI();
+}
+
+function rpyToQuaternion(rpy) {
+    // RPY (度) → 四元数 [x, y, z, w] (URDF ZYX 约定, 与后端一致)
+    const r = rpy[0] * Math.PI / 180, p = rpy[1] * Math.PI / 180, y = rpy[2] * Math.PI / 180;
+    const cr = Math.cos(r/2), sr = Math.sin(r/2);
+    const cp = Math.cos(p/2), sp = Math.sin(p/2);
+    const cy = Math.cos(y/2), sy = Math.sin(y/2);
+    return [
+        sr*cp*cy - cr*sp*sy,
+        cr*sp*cy + sr*cp*sy,
+        cr*cp*sy - sr*sp*cy,
+        cr*cp*cy + sr*sp*sy,
+    ];
+}
+
+function quatToRPY(q) {
+    // 四元数 [x, y, z, w] → RPY (度) (URDF ZYX 约定)
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    const roll = Math.atan2(2*(w*x + y*z), 1 - 2*(x*x + y*y));
+    const sinp = 2*(w*y - z*x);
+    const pitch = Math.abs(sinp) >= 1 ? Math.sign(sinp)*Math.PI/2 : Math.asin(sinp);
+    const yaw = Math.atan2(2*(w*z + x*y), 1 - 2*(y*y + z*z));
+    return [roll*180/Math.PI, pitch*180/Math.PI, yaw*180/Math.PI];
+}
+
+// ========== 文字标签 sprite ==========
+function makeTextSprite(text, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.font = 'bold 56px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(text, 256, 64, 480);
+    const tex = new THREE.CanvasTexture(canvas);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    spr.scale.set(0.55, 0.1375, 1);
+    return spr;
+}
+
+function setTextSprite(spr, text, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.font = 'bold 56px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(text, 256, 64, 480);
+    if (spr.material.map) spr.material.map.dispose();
+    spr.material.map = new THREE.CanvasTexture(canvas);
+    spr.material.needsUpdate = true;
+}
+
+// ========== 初始化场景 (双臂对比) ==========
+function initScene() {
+    const container = document.getElementById('canvas-container');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.Fog(0x1a1a2e, 6, 18);
+    
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 100);
+    camera.position.set(1.4, 1.25, 2.8);
+    camera.lookAt(0, 0.3, 0.55);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+    
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.35, 0.55);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.update();
+    
+    // 光照
+    scene.add(new THREE.AmbientLight(0x404060, 1.5));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    dirLight.position.set(3, 5, 3);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    dirLight.shadow.camera.near = 0.1; dirLight.shadow.camera.far = 20;
+    dirLight.shadow.camera.left = -3; dirLight.shadow.camera.right = 3;
+    dirLight.shadow.camera.top = 4; dirLight.shadow.camera.bottom = -3;
+    scene.add(dirLight);
+    const fillLight = new THREE.DirectionalLight(0x8888ff, 0.5);
+    fillLight.position.set(-2, 2, -2);
+    scene.add(fillLight);
+    
+    // 地面 (覆盖两个场景)
+    const groundGeo = new THREE.PlaneGeometry(6, 5);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x222244, roughness: 0.8, metalness: 0.2 });
+    groundPlane = new THREE.Mesh(groundGeo, groundMat);
+    groundPlane.rotation.x = -Math.PI / 2;
+    groundPlane.position.set(0, 0, DUAL_OFF3[2] / 2);
+    groundPlane.receiveShadow = true;
+    scene.add(groundPlane);
+    
+    // 两个场景各自的网格 + 坐标轴
+    for (const side of SIDES) {
+        const off = sideOffset(side);
+        const grid = new THREE.GridHelper(2.2, 11, side === 'l' ? 0x2e6e4e : 0x6e2e2e, 0x222244);
+        grid.position.set(off[0], 0.001, off[2]);
+        scene.add(grid);
+        const axes = new THREE.AxesHelper(0.3);
+        axes.position.set(off[0], 0.002, off[2]);
+        scene.add(axes);
+    }
+    // 中间分隔线
+    const sepGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2, 0.005, DUAL_OFF3[2] / 2),
+        new THREE.Vector3(2, 0.005, DUAL_OFF3[2] / 2),
+    ]);
+    scene.add(new THREE.Line(sepGeo, new THREE.LineBasicMaterial({ color: 0x556688 })));
+    
+    // 目标标记 (两侧)
+    const targetGeo = new THREE.SphereGeometry(0.025, 16, 16);
+    const targetMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5, transparent: true, opacity: 0.8 });
+    targetMarker = new THREE.Mesh(targetGeo, targetMat);
+    targetMarker.visible = false;
+    scene.add(targetMarker);
+    targetMarkerR = new THREE.Mesh(targetGeo, targetMat);
+    targetMarkerR.visible = false;
+    scene.add(targetMarkerR);
+    
+    // 目标姿态三轴标记 (两侧)
+    const triadLen = 0.07;
+    const makeTriad = () => {
+        const g = new THREE.Group();
+        g.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), triadLen, 0xff4444, 0.02, 0.012));
+        g.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(), triadLen, 0x44ff44, 0.02, 0.012));
+        g.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(), triadLen, 0x4488ff, 0.02, 0.012));
+        g.visible = false;
+        scene.add(g);
+        return g;
+    };
+    targetTriad = makeTriad();
+    targetTriadR = makeTriad();
+    
+    // EE 标记与姿态三轴 (每侧各自创建, 颜色区分)
+    for (const side of SIDES) {
+        const rb = robots[side];
+        const off = sideOffset(side);
+        const eeColor = side === 'l' ? 0x00ff00 : 0xffaa00;
+        rb.eeMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.025, 16, 16),
+            new THREE.MeshPhongMaterial({ color: eeColor, emissive: eeColor, emissiveIntensity: 0.5 })
+        );
+        scene.add(rb.eeMarker);
+        rb.eeTriad = new THREE.Group();
+        rb.eeTriad.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), triadLen, 0xff4444, 0.02, 0.012));
+        rb.eeTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(), triadLen, 0x44ff44, 0.02, 0.012));
+        rb.eeTriad.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(), triadLen, 0x4488ff, 0.02, 0.012));
+        scene.add(rb.eeTriad);
+        rb.label = makeTextSprite((side === 'l' ? '左: ' : '右: ') + METHOD_NAMES[rb.method],
+                                  side === 'l' ? '#4ade80' : '#f87171');
+        rb.label.position.set(0, 1.05, off[2]);
+        scene.add(rb.label);
+    }
+    eeMarker = robots.l.eeMarker;  // 兼容旧引用
+    eeTriad = robots.l.eeTriad;
+    
+    // EE轨迹线
+    pathEETrail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x00ff88, linewidth: 2 }));
+    scene.add(pathEETrail);
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+    
+    renderer.domElement.addEventListener('click', onCanvasClick);
+}
+
+// ========== 清除双臂机器人模型 ==========
+function clearRobotModel() {
+    for (const side of SIDES) {
+        const rb = robots[side];
+        if (!rb.container) continue;
+        for (const group of Object.values(rb.linkMeshes)) {
+            group.traverse(child => {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                    if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                    else child.material.dispose();
+                }
+            });
+        }
+        for (const sphere of Object.values(rb.jointSpheres)) {
+            sphere.geometry.dispose();
+            sphere.material.dispose();
+        }
+        for (const cyl of rb.linkCylinders) {
+            cyl.geometry.dispose();
+            cyl.material.dispose();
+        }
+        scene.remove(rb.container);
+        rb.container = null;
+        rb.linkMeshes = {};
+        rb.jointSpheres = {};
+        rb.linkCylinders = [];
+    }
+}
+
+// ========== 加载带mesh的机械臂 (支持OBJ和STL格式, 加载到指定侧容器) ==========
+async function loadMeshRobot(linkMeshDefs, rb) {
+    const objLoader = new OBJLoader();
+    const stlLoader = new STLLoader();
+    
+    const loadPromises = linkMeshDefs.map((linkDef, index) => {
+        return new Promise(async (resolve) => {
+            try {
+                const isSTL = linkDef.format === 'stl' || linkDef.mesh.endsWith('.stl');
+                
+                // 最后两个 link 半透明 (避免遮挡坐标轴)
+                const isTransparent = index >= linkMeshDefs.length - 2;
+                
+                if (isSTL) {
+                    // 加载STL (二进制)
+                    const response = await fetch(linkDef.mesh);
+                    const buffer = await response.arrayBuffer();
+                    const geometry = stlLoader.parse(buffer);
+                    geometry.computeVertexNormals();
+                    
+                    const material = new THREE.MeshPhongMaterial({
+                        color: linkDef.color, specular: 0x444444, shininess: 30, side: THREE.DoubleSide,
+                        transparent: isTransparent, opacity: isTransparent ? 0.35 : 1.0,
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    const group = new THREE.Group();
+                    group.add(mesh);
+                    group.name = linkDef.name;
+                    rb.container.add(group);
+                    rb.linkMeshes[linkDef.name] = group;
+                } else {
+                    // 加载OBJ (文本)
+                    const response = await fetch(linkDef.mesh);
+                    let objText = await response.text();
+                    objText = objText.replace(/^mtllib.*$/gm, '# mtllib removed');
+                    objText = objText.replace(/^usemtl.*$/gm, '# usemtl removed');
+                    
+                    const obj = objLoader.parse(objText);
+                    obj.traverse((child) => {
+                        if (child.isMesh) {
+                            child.geometry.computeVertexNormals();
+                            child.material = new THREE.MeshPhongMaterial({
+                                color: linkDef.color, specular: 0x444444, shininess: 30, side: THREE.DoubleSide,
+                                transparent: isTransparent, opacity: isTransparent ? 0.35 : 1.0,
+                            });
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    const group = new THREE.Group();
+                    group.add(obj);
+                    group.name = linkDef.name;
+                    rb.container.add(group);
+                    rb.linkMeshes[linkDef.name] = group;
+                }
+            } catch (err) {
+                console.warn(`加载失败 ${linkDef.name}:`, err);
+                const placeholder = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.04, 12, 12),
+                    new THREE.MeshPhongMaterial({ color: linkDef.color, side: THREE.DoubleSide })
+                );
+                const group = new THREE.Group();
+                group.add(placeholder);
+                group.name = linkDef.name;
+                rb.container.add(group);
+                rb.linkMeshes[linkDef.name] = group;
+            }
+            resolve();
+        });
+    });
+    
+    await Promise.all(loadPromises);
+}
+
+// ========== 加载无mesh的机械臂 (用圆柱体+球体渲染, 加载到指定侧容器) ==========
+async function loadPrimitiveRobot(robotInfo, rb) {
+    const numAxes = robotInfo.num_axes;
+    const joints = robotInfo.joints;
+    
+    // 创建base
+    const baseGroup = new THREE.Group();
+    const baseMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.075, 0.08, 0.08, 24),
+        new THREE.MeshPhongMaterial({ color: 0x555555, specular: 0x333333, shininess: 30 })
+    );
+    baseMesh.castShadow = true;
+    baseGroup.add(baseMesh);
+    baseGroup.name = 'base_link_inertia';
+    rb.container.add(baseGroup);
+    rb.linkMeshes['base_link_inertia'] = baseGroup;
+    
+    // 为每个可控关节创建link可视化 (圆柱体)
+    const linkColors = [0x2266aa, 0x3377bb, 0x4488cc, 0x3377bb, 0x2266aa, 0x1155aa];
+    for (let i = 0; i < numAxes; i++) {
+        const group = new THREE.Group();
+        const radius = Math.max(0.02, 0.05 - i * 0.005);
+        const length = (i < 2) ? 0.2 : 0.12;
+        
+        const linkMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(radius, radius, length, 16),
+            new THREE.MeshPhongMaterial({
+                color: linkColors[i % linkColors.length],
+                specular: 0x444444, shininess: 30,
+            })
+        );
+        linkMesh.castShadow = true;
+        group.add(linkMesh);
+        
+        // 关节圆盘
+        const jointDisk = new THREE.Mesh(
+            new THREE.CylinderGeometry(radius + 0.01, radius + 0.01, 0.02, 16),
+            new THREE.MeshPhongMaterial({ color: 0x888888, specular: 0x666666 })
+        );
+        jointDisk.castShadow = true;
+        group.add(jointDisk);
+        
+        const linkName = joints[i].name.replace('_joint', '_link');
+        group.name = linkName;
+        rb.container.add(group);
+        rb.linkMeshes[linkName] = group;
+    }
+    
+    // EE link (法兰) 在 createEELinkVisual 中创建
+}
+
+// ========== 创建末端执行器(法兰)可视化 ==========
+function createEELinkVisual(rb) {
+    // 如果 ee_link 已经存在(从 mesh 加载)，则跳过
+    if (rb.linkMeshes['ee_link']) return;
+    
+    // EE link (法兰) - 用黄色圆盘表示
+    const eeGroup = new THREE.Group();
+    const eeMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 0.015, 24),
+        new THREE.MeshPhongMaterial({ 
+            color: 0xffcc00, 
+            emissive: 0x886600, 
+            emissiveIntensity: 0.5
+        })
+    );
+    eeMesh.position.z = 0.0075;
+    eeGroup.add(eeMesh);
+    
+    eeGroup.name = 'ee_link';
+    rb.container.add(eeGroup);
+    rb.linkMeshes['ee_link'] = eeGroup;
+}
+
+// ========== 创建关节球体和连接圆柱 ==========
+function createJointVisuals(numAxes, rb) {
+    // 关节球体
+    for (let i = 0; i < numAxes; i++) {
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.018, 12, 12),
+            new THREE.MeshPhongMaterial({
+                color: 0xff8800, transparent: true, opacity: 0.6,
+                emissive: 0xff4400, emissiveIntensity: 0.3
+            })
+        );
+        sphere.name = `joint_sphere_${i}`;
+        rb.container.add(sphere);
+        rb.jointSpheres[`joint${i}`] = sphere;
+    }
+    
+    // 连接圆柱体
+    for (let i = 0; i < numAxes; i++) {
+        const cylGeo = new THREE.CylinderGeometry(0.008, 0.008, 1, 8);
+        const cylMat = new THREE.MeshPhongMaterial({ color: 0xcccccc, transparent: true, opacity: 0.3 });
+        const cyl = new THREE.Mesh(cylGeo, cylMat);
+        rb.container.add(cyl);
+        rb.linkCylinders.push(cyl);
+    }
+}
+
+// ========== 加载机器人模型 (双臂统一入口) ==========
+async function loadRobotModel(robotInfo) {
+    clearRobotModel();
+    
+    for (const side of SIDES) {
+        const rb = robots[side];
+        const off = sideOffset(side);
+        rb.container = new THREE.Group();
+        rb.container.position.set(off[0], off[1], off[2]);
+        scene.add(rb.container);
+        
+        if (robotInfo.link_meshes && robotInfo.link_meshes.length > 0) {
+            // 有mesh的机器人 (OBJ或STL)
+            await loadMeshRobot(robotInfo.link_meshes, rb);
+        } else {
+            // 无mesh的机器人, 用primitive渲染
+            await loadPrimitiveRobot(robotInfo, rb);
+        }
+        
+        // 始终创建 ee_link 可视化（如果 link_meshes 中没有 ee_link）
+        createEELinkVisual(rb);
+        createJointVisuals(robotInfo.num_axes, rb);
+    }
+    
+    document.getElementById('loading').style.display = 'none';
+    console.log(`双臂模型加载完成: ${robotInfo.name}`);
+}
+
+// ========== 更新机械臂姿态 (双侧同步或单侧, 起始构型对齐) ==========
+function updateRobotPose(linkTransforms, side = null) {
+    if (!linkTransforms) return;
+    
+    // Panda joint name -> link name 映射
+    const pandaJointToLink = {
+        'panda_joint1': 'panda_link1',
+        'panda_joint2': 'panda_link2',
+        'panda_joint3': 'panda_link3',
+        'panda_joint4': 'panda_link4',
+        'panda_joint5': 'panda_link5',
+        'panda_joint6': 'panda_link6',
+        'panda_joint7': 'panda_link7'
+    };
+    
+    const sides = side ? [side] : SIDES;
+    for (const s of sides) {
+        const rb = robots[s];
+        if (!rb.container) continue;
+        
+        for (const tf of linkTransforms) {
+            const mesh = rb.linkMeshes[tf.name];
+            if (mesh) {
+                const pos = pyPosToThree(tf.position);
+                const quat = pyQuatToThree(tf.orientation);
+                mesh.position.set(pos[0], pos[1], pos[2]);
+                mesh.quaternion.set(quat[0], quat[1], quat[2], quat[3]);
+            }
+        }
+        
+        // 更新关节球体
+        if (!currentRobotInfo) continue;
+        const joints = currentRobotInfo.joints;
+        const positions = [];
+        for (let i = 0; i < joints.length; i++) {
+            const jointName = joints[i].name;
+            const linkName = pandaJointToLink[jointName] || jointName.replace('_joint', '_link');
+            for (const tf of linkTransforms) {
+                if (tf.name === linkName || tf.name === jointName) {
+                    const pos = pyPosToThree(tf.position);
+                    positions.push(pos);
+                    const sphere = rb.jointSpheres[`joint${i}`];
+                    if (sphere) sphere.position.set(pos[0], pos[1], pos[2]);
+                    break;
+                }
+            }
+        }
+        
+        // 更新连接圆柱体
+        for (let i = 0; i < rb.linkCylinders.length && i < positions.length - 1; i++) {
+            const posA = new THREE.Vector3(...positions[i]);
+            const posB = new THREE.Vector3(...positions[i + 1]);
+            const mid = posA.clone().add(posB).multiplyScalar(0.5);
+            const dir = posB.clone().sub(posA);
+            const len = dir.length();
+            const cyl = rb.linkCylinders[i];
+            cyl.position.copy(mid);
+            cyl.scale.set(1, len, 1);
+            if (len > 0.001) {
+                cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+            }
+        }
+    }
+}
+
+// ========== 末端标记 (双侧同步或单侧) ==========
+function updateEEMarker(position, orientation, side = null) {
+    if (!position) return;
+    const p = pyPosToThree(position);
+    const sides = side ? [side] : SIDES;
+    for (const s of sides) {
+        const rb = robots[s];
+        const off = sideOffset(s);
+        if (rb.eeMarker) rb.eeMarker.position.set(p[0] + off[0], p[1] + off[1], p[2] + off[2]);
+        if (rb.eeTriad) {
+            rb.eeTriad.position.set(p[0] + off[0], p[1] + off[1], p[2] + off[2]);
+            if (orientation) {
+                const q = pyQuatToThree(orientation);
+                rb.eeTriad.quaternion.set(q[0], q[1], q[2], q[3]);
+            }
+        }
+    }
+}
+
+function updateTargetMarker(position, orientation) {
+    const tp = pyPosToThree(position);
+    targetMarker.visible = true;
+    targetMarker.position.set(tp[0], tp[1], tp[2]);
+    targetMarkerR.visible = true;
+    targetMarkerR.position.set(tp[0] + DUAL_OFF3[0], tp[1] + DUAL_OFF3[1], tp[2] + DUAL_OFF3[2]);
+    if (orientation) {
+        const q = pyQuatToThree(orientation);
+        for (const triad of [targetTriad, targetTriadR]) {
+            triad.visible = true;
+            triad.quaternion.set(q[0], q[1], q[2], q[3]);
+        }
+        targetTriad.position.set(tp[0], tp[1], tp[2]);
+        targetTriadR.position.set(tp[0] + DUAL_OFF3[0], tp[1] + DUAL_OFF3[1], tp[2] + DUAL_OFF3[2]);
+    }
+}
+
+// ========== 轨迹 (已禁用) ==========
+let trailPoints = [];
+function addTrailPoint(pos) {
+    // 不再绘制历史轨迹, 仅显示当前末端位置
+}
+
+function clearTrail() {
+    trailPoints = [];
+    const geo = new THREE.BufferGeometry();
+    pathEETrail.geometry.dispose();
+    pathEETrail.geometry = geo;
+}
+
+// ========== 点击地面 ==========
+function onCanvasClick(event) {
+    if (isAnimating) return;
+    const container = document.getElementById('canvas-container');
+    const rect = container.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.5);
+    const intersection = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, intersection);
+    if (intersection) {
+        const pyPos = threePosToPy([intersection.x, intersection.y, intersection.z]);
+        const bounds = currentRobotInfo ? currentRobotInfo.reach_bounds : {x_min:-0.8,x_max:0.8,y_min:-0.8,y_max:0.8,z_min:0.1,z_max:1.0};
+        let x = Math.max(bounds.x_min, Math.min(bounds.x_max, pyPos[0]));
+        let y = Math.max(bounds.y_min, Math.min(bounds.y_max, pyPos[1]));
+        let z = Math.max(bounds.z_min, Math.min(bounds.z_max, pyPos[2]));
+        // 可达球投影: AABB 角点 (如 0.8,-0.8) 水平距 1.13m 超 Panda 臂展 (~0.855m),
+        // 点击可能落到不可达点导致求解必然失败, 故收缩到基座可达球内 (留 5% 裕量)
+        const REACH = 0.81, BASE_Z = 0.33;
+        const rx = x, ry = y, rz = z - BASE_Z;
+        const d = Math.hypot(rx, ry, rz);
+        if (d > REACH) {
+            const s = REACH / d;
+            x = rx * s; y = ry * s; z = BASE_Z + rz * s;
+        }
+        setTargetValues(x, y, z);
+        updateTargetMarker([x, y, z], rpyToQuaternion(getTargetRPY()));
+    }
+}
+
+// ========== UI 交互 ==========
+function setTargetValues(x, y, z) {
+    document.getElementById('target-x').value = x;
+    document.getElementById('target-y').value = y;
+    document.getElementById('target-z').value = z;
+    document.getElementById('target-x-range').value = x;
+    document.getElementById('target-y-range').value = y;
+    document.getElementById('target-z-range').value = z;
+}
+
+function getTargetValues() {
+    return [
+        parseFloat(document.getElementById('target-x').value),
+        parseFloat(document.getElementById('target-y').value),
+        parseFloat(document.getElementById('target-z').value),
+    ];
+}
+
+function getTargetRPY() {
+    return [
+        parseFloat(document.getElementById('target-roll').value),
+        parseFloat(document.getElementById('target-pitch').value),
+        parseFloat(document.getElementById('target-yaw').value),
+    ];
+}
+
+function setTargetRPY(r, p, y) {
+    loadedTargetQuat = null;
+    document.getElementById('target-roll').value = r;
+    document.getElementById('target-pitch').value = p;
+    document.getElementById('target-yaw').value = y;
+    document.getElementById('target-roll-range').value = Math.round(r);
+    document.getElementById('target-pitch-range').value = Math.round(p);
+    document.getElementById('target-yaw-range').value = Math.round(y);
+}
+
+['x', 'y', 'z'].forEach(axis => {
+    const numInput = document.getElementById(`target-${axis}`);
+    const rangeInput = document.getElementById(`target-${axis}-range`);
+    numInput.addEventListener('input', () => {
+        rangeInput.value = numInput.value;
+        updateTargetMarker(getTargetValues(), loadedTargetQuat || rpyToQuaternion(getTargetRPY()));
+    });
+    rangeInput.addEventListener('input', () => {
+        numInput.value = rangeInput.value;
+        updateTargetMarker(getTargetValues(), loadedTargetQuat || rpyToQuaternion(getTargetRPY()));
+    });
+});
+
+['roll', 'pitch', 'yaw'].forEach(axis => {
+    const numInput = document.getElementById(`target-${axis}`);
+    const rangeInput = document.getElementById(`target-${axis}-range`);
+    numInput.addEventListener('input', () => {
+        loadedTargetQuat = null;
+        rangeInput.value = numInput.value;
+        updateTargetMarker(getTargetValues(), rpyToQuaternion(getTargetRPY()));
+    });
+    rangeInput.addEventListener('input', () => {
+        loadedTargetQuat = null;
+        numInput.value = rangeInput.value;
+        updateTargetMarker(getTargetValues(), rpyToQuaternion(getTargetRPY()));
+    });
+});
+
+// IK方法描述
+const METHOD_DESC = {
+    'rl6d': 'MAPPO-IK 乘法耦合奖励 + PPO 30M 步训练 — 位置+姿态一步联合求解',
+    'jacobian': '公式: Δq = J^T(JJ^T+λ²I)^{-1}Δx — 数值稳定，KDL/TracIK默认算法',
+    'dls': '调用pybullet内置IK_DLS求解器，内部实现阻尼最小二乘',
+    'transpose': '公式: Δq = α·J^T·Δx — 最简单，无需矩阵求逆，收敛慢',
+    'pseudoinverse': '公式: Δq = J^T(JJ^T)^{-1}Δx — 最小范数解，奇异位形附近不稳定',
+    'rl': '使用 PPO 强化学习模型推理 (仅位置 3D IK)',
+    'rl_avoid': 'v30 best PPO 策略，位置与姿态联合求解；安全性由实际轨迹检测结果判定。',
+    'rl_avoid_dls': 'v30 PPO 粗调 + DLS 精调；显示完整求解及轨迹复检耗时。',
+    'dls_avoid': '阻尼最小二乘，不主动避障；是否碰撞以检测结果为准。',
+    'nullspace': 'Δq = J⁺e + (I−J⁺J)g — 冗余度零空间斥力势场避障 (经典方法)',
+};
+document.getElementById('ik-method').addEventListener('change', (e) => {
+    const method = e.target.value;
+    document.getElementById('method-desc').textContent = METHOD_DESC[method] || '';
+    updateComparisonLabels(...comparisonMethods(method));
+    // New method labels must not describe the previous pair's measurements.
+    document.querySelectorAll('#status .value').forEach(cell => {
+        cell.textContent = '-'; cell.className = 'value';
+    });
+    // 姿态输入组: 6D 方法与避障方法显示
+    const showOrient = (method === 'rl6d') || AVOID_METHODS.includes(method);
+    document.getElementById('orientation-group').style.display = showOrient ? '' : 'none';
+    // 雅可比来源: dls/rl/rl6d/避障方法 不需要
+    const needJac = !(method === 'dls' || method === 'rl' || method === 'rl6d'
+                      || AVOID_METHODS.includes(method));
+    document.getElementById('jac-mode-group').style.display = needJac ? '' : 'none';
+    // RL 训练面板: 仅 3D RL 显示
+    document.getElementById('rl-train-group').style.display = (method === 'rl') ? '' : 'none';
+    if (method === 'rl') checkRLStatus();
+});
+
+const JAC_DESC = {
+    'pybullet': '调用pybullet的calculateJacobian，内部用自动微分计算',
+    'manual': '几何法: J_i = z_i × (p_ee - p_i)，z_i是关节轴方向，p_i是关节位置',
+};
+document.querySelectorAll('input[name="jac-mode"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        document.getElementById('jac-desc').textContent = JAC_DESC[e.target.value] || '';
+    });
+});
+
+// ========== 更新目标坐标范围 ==========
+function updateTargetBounds(reachBounds) {
+    if (!reachBounds) return;
+    const {x_min, x_max, y_min, y_max, z_min, z_max} = reachBounds;
+    const xInput = document.getElementById('target-x');
+    const yInput = document.getElementById('target-y');
+    const zInput = document.getElementById('target-z');
+    const xRange = document.getElementById('target-x-range');
+    const yRange = document.getElementById('target-y-range');
+    const zRange = document.getElementById('target-z-range');
+    
+    xInput.min = x_min; xInput.max = x_max;
+    yInput.min = y_min; yInput.max = y_max;
+    zInput.min = z_min; zInput.max = z_max;
+    xRange.min = x_min; xRange.max = x_max;
+    yRange.min = y_min; yRange.max = y_max;
+    zRange.min = z_min; zRange.max = z_max;
+}
+
+// ========== 更新预设按钮 ==========
+function updatePresets(presets) {
+    const container = document.getElementById('preset-buttons');
+    container.innerHTML = '';
+    if (!presets) return;
+    for (const p of presets) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.cssText = 'flex:1;min-width:80px;font-size:11px;';
+        btn.textContent = p.name;
+        btn.onclick = () => {
+            setTargetValues(p.pos[0], p.pos[1], p.pos[2]);
+            updateTargetMarker(p.pos, loadedTargetQuat || rpyToQuaternion(getTargetRPY()));
+        };
+        container.appendChild(btn);
+    }
+}
+
+// ========== 切换机械臂 ==========
+async function switchRobot(robotId) {
+    document.getElementById('loading').style.display = '';
+    document.getElementById('loading').innerHTML = '<div class="spinner"></div>正在切换机械臂...';
+    
+    try {
+        const response = await fetch('/api/switch_robot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ robot_id: robotId })
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error);
+        
+        currentRobotInfo = data.robot_info;
+        
+        // 更新UI
+        document.getElementById('app-title').textContent = document.title;
+        document.getElementById('app-subtitle').textContent = 'Panda 运动学仿真；左右为同一场景的算法对比，非双臂协同';
+        
+        updateTargetBounds(currentRobotInfo.reach_bounds);
+        updatePresets(currentRobotInfo.presets);
+        
+        // 重新加载3D模型
+        await loadRobotModel(currentRobotInfo);
+        
+        // 更新姿态
+        const stateResp = await fetch('/api/get_state');
+        const stateData = await stateResp.json();
+        updateRobotPose(stateData.link_transforms);
+        updateEEMarker(stateData.ee_position, stateData.ee_orientation);
+        updateJointAnglesDisplay(stateData.joint_angles);
+        
+        // 设置默认目标
+        const defaultPreset = currentRobotInfo.presets ? currentRobotInfo.presets[0] : null;
+        if (defaultPreset) {
+            setTargetValues(defaultPreset.pos[0], defaultPreset.pos[1], defaultPreset.pos[2]);
+            updateTargetMarker(defaultPreset.pos, rpyToQuaternion(getTargetRPY()));
+        }
+        
+        clearTrail();
+        
+    } catch (err) {
+        console.error('切换机械臂失败:', err);
+        alert('切换机械臂失败: ' + err.message);
+    }
+}
+
+// 机器人选择事件
+document.getElementById('robot-select').addEventListener('change', (e) => {
+    switchRobot(e.target.value);
+});
+
+// ========== 求解IK ==========
+const AVOID_METHODS = ['rl_avoid', 'rl_avoid_dls', 'dls_avoid', 'nullspace'];
+
+async function solveIK() {
+    if (isAnimating || isSolving || autoDemoRunning) return;
+    const targetPos = getTargetValues();
+    const [methodL, methodR] = comparisonMethods();
+    updateComparisonLabels(methodL, methodR);
+    isSolving = true;
+    document.getElementById('ik-method').disabled = true;
+    const shouldAnimate = document.getElementById('animate-path').checked;
+    
+    const btnSolve = document.getElementById('btn-solve');
+    btnSolve.classList.add('animating');
+    btnSolve.textContent = '求解中...';
+    
+    try {
+        // 起始位姿对齐: 双臂先回到 home 构型 (后端单一状态, 一次重置即可)
+        const resetResp = await fetch(loadedStartQ ? '/api/forward_kinematics' : '/api/reset', {
+            method: 'POST', headers:{'Content-Type':'application/json'},
+            body:loadedStartQ ? JSON.stringify({joint_angles:loadedStartQ}) : '{}'});
+        const resetData = await resetResp.json();
+        updateRobotPose(resetData.link_transforms);
+        updateEEMarker(resetData.ee_position, resetData.ee_orientation);
+        
+        // 两臂并行求解 (同一目标 + 同一障碍物 + 同一起始构型)
+        const [resL, resR] = await Promise.all([
+            solveAvoid(targetPos, methodL, loadedStartQ, loadedTargetQuat),
+            solveAvoid(targetPos, methodR, loadedStartQ, loadedTargetQuat),
+        ]);
+        if (resL && resR) {
+            if (shouldAnimate) {
+                await animateDualTrajectory(resL.trajectory, resR.trajectory, resL, resR);
+            }
+            if (resL.link_transforms) updateRobotPose(resL.link_transforms, 'l');
+            if (resR.link_transforms) updateRobotPose(resR.link_transforms, 'r');
+            if (resL.ee_position) updateEEMarker(resL.ee_position, resL.ee_orientation, 'l');
+            if (resR.ee_position) updateEEMarker(resR.ee_position, resR.ee_orientation, 'r');
+            updateDualStatus(resL, resR, methodL, methodR);
+        }
+    } catch (err) {
+        console.error('IK求解错误:', err);
+        document.getElementById('file-status').textContent = '求解失败：'+err.message;
+    } finally {
+        isSolving = false;
+        document.getElementById('ik-method').disabled = autoDemoRunning;
+    }
+    
+    btnSolve.classList.remove('animating');
+    btnSolve.textContent = '求解IK';
+}
+
+async function solveAvoid(targetPos, method, startQ = null, targetQuat = null) {
+    const sceneRecord = JSON.parse(JSON.stringify({schema_version:1, robot_id:'panda',
+        target_pos:targetPos, target_rpy:getTargetRPY(), target_quat:targetQuat,
+        method, obstacles:currentObstacles, start_q:startQ}));
+    const response = await fetch('/api/solve_ik_avoid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            target_pos: targetPos,
+            target_rpy: getTargetRPY(),
+            target_quat: targetQuat,
+            method: method,
+            obstacles: currentObstacles,
+            start_q: startQ,
+        })
+    });
+    const data = await response.json();
+    if (!response.ok || data.error) {
+        console.error('求解错误 (' + method + '):', data.error);
+        throw new Error(data.error || '求解接口失败');
+    }
+    sceneRecord.start_q = data.start_q;
+    sceneRecord.target_quat = data.target_orientation || targetQuat;
+    experimentResults.push({timestamp:new Date().toISOString(),scene:sceneRecord,result:data});
+    return data;
+}
+
+// 抗终点抖动: 裁剪轨迹尾部振荡帧
+// 注: 当前未启用 — 用户要求保留原始抖动, 方便后续验证训练优化效果
+// (RL 策略在目标附近极限环振荡 + best-so-far 回退导致轨迹尾部摇摆/倒跳)
+// 需要时把 animateDualTrajectory 里的赋值改回 trimTrajectoryEnd(traj, res) 即可
+function trimTrajectoryEnd(trajectory, result) {
+    if (!trajectory || trajectory.length < 3 || !result) return trajectory;
+    // 收敛阈值: 取环境容差的 ~3 倍作为"进入收敛区"判据 (宽松, 保留接近过程)
+    const posTh = 0.03;    // 30mm (环境容差 10mm)
+    const oriTh = 0.105;   // 6° (环境容差 2°)
+    const target = result.target_position;
+    if (!target) return trajectory;
+    // 用末端位置近似判断 (避免逐帧 FK): 关节角变化量很小时末端误差也小
+    // 从尾部向前找: 第一个"与最终构型差异明显"的帧
+    const qFinal = result.joint_angles;
+    if (!qFinal) return trajectory;
+    const jointTh = 0.02;  // rad, 约 1.15°/关节
+    let endIdx = trajectory.length - 1;
+    while (endIdx > 1) {
+        const q = trajectory[endIdx - 1];
+        let maxDiff = 0;
+        for (let j = 0; j < q.length; j++) maxDiff = Math.max(maxDiff, Math.abs(q[j] - qFinal[j]));
+        if (maxDiff > jointTh) break;
+        endIdx--;
+    }
+    // 至少保留到接近终点的帧; 若裁剪过多 (异常) 则不裁
+    if (endIdx < trajectory.length * 0.5) return trajectory;
+    return trajectory.slice(0, endIdx + 1);
+}
+
+// 双臂轨迹同步动画: 逐帧 FK 播放两条关节序列 (原始轨迹, 不裁剪)
+// frameDelay: 每帧间隔 ms (手动求解 25, 自动演示平滑模式 80)
+async function animateDualTrajectory(trajL, trajR, resL, resR, frameDelay = 25) {
+    trajL = trajL || [];
+    trajR = trajR || [];
+    const n = Math.max(trajL.length, trajR.length);
+    if (n === 0) return;
+    isAnimating = true;
+    clearTrail();
+    for (let i = 0; i < n; i++) {
+        const qL = trajL[Math.min(i, trajL.length - 1)];
+        const qR = trajR[Math.min(i, trajR.length - 1)];
+        // 后端单一仿真状态, 串行 FK (同一构型下结果一致)
+        const fkL = await (await fetch('/api/forward_kinematics', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ joint_angles: qL })
+        })).json();
+        if (fkL.link_transforms) updateRobotPose(fkL.link_transforms, 'l');
+        if (fkL.position) updateEEMarker(fkL.position, fkL.orientation, 'l');
+        const fkR = await (await fetch('/api/forward_kinematics', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ joint_angles: qR })
+        })).json();
+        if (fkR.link_transforms) updateRobotPose(fkR.link_transforms, 'r');
+        if (fkR.position) updateEEMarker(fkR.position, fkR.orientation, 'r');
+        updateJointAnglesDisplay(qL);
+        await new Promise(r => setTimeout(r, frameDelay));
+    }
+    isAnimating = false;
+}
+
+// ========== 状态显示 (双臂对比) ==========
+const METHOD_NAMES = {
+    'rl_avoid': 'RL 避障',
+    'rl_avoid_dls': 'RL + DLS 精调',
+    'dls_avoid': 'DLS (不避障)',
+    'nullspace': '零空间避障',
+};
+
+function comparisonMethods(methodL = document.getElementById('ik-method').value) {
+    return [methodL, methodL === 'dls_avoid' ? 'nullspace' : 'dls_avoid'];
+}
+
+function updateComparisonLabels(methodL, methodR) {
+    for (const [side, method] of [['l', methodL], ['r', methodR]]) {
+        const label = (side === 'l' ? '左: ' : '右: ') + (METHOD_NAMES[method] || method);
+        robots[side].method = method;
+        document.getElementById('stat-method-' + side).textContent = label;
+        if (robots[side].label) {
+            setTextSprite(robots[side].label, label, side === 'l' ? '#4ade80' : '#f87171');
+        }
+    }
+}
+
+function updateDualStatus(resL, resR, methodL, methodR) {
+    updateComparisonLabels(methodL, methodR);
+    for (const [res, sfx] of [[resL, 'l'], [resR, 'r']]) {
+        if (!res) continue;
+        const st = document.getElementById('st-status-' + sfx);
+        st.textContent = res.success ? '成功' : '失败';
+        st.className = res.success ? 'value success' : 'value fail';
+        document.getElementById('st-poserr-' + sfx).textContent =
+            res.position_error !== undefined ? (res.position_error * 1000).toFixed(1) + ' mm' : '-';
+        document.getElementById('st-orierr-' + sfx).textContent =
+            res.orientation_error_deg !== undefined ? res.orientation_error_deg.toFixed(2) + '°' : '-';
+        const md = document.getElementById('st-mindist-' + sfx);
+        if (res.min_distance === undefined || res.min_distance === null) {
+            md.textContent = '-'; md.className = 'value';
+        } else if (res.min_distance > 0.49) {
+            md.textContent = '无障碍物'; md.className = 'value';
+        } else {
+            md.textContent = (res.min_distance * 1000).toFixed(1) + ' mm';
+            md.className = res.min_distance < 0.015 ? 'value fail' : 'value success';
+        }
+        const coll = document.getElementById('st-coll-' + sfx);
+        if (res.n_collisions === undefined) {
+            coll.textContent = '-'; coll.className = 'value';
+        } else {
+            coll.textContent = res.n_collisions > 0 ? `${res.n_collisions} 处碰撞` : '无碰撞';
+            coll.className = res.n_collisions > 0 ? 'value fail' : 'value success';
+        }
+        const tcoll = document.getElementById('st-trajcoll-' + sfx);
+        if (res.trajectory_collisions === undefined) {
+            tcoll.textContent = '-'; tcoll.className = 'value';
+        } else {
+            tcoll.textContent = res.trajectory_collisions > 0 ? `${res.trajectory_collisions} 帧碰撞` : '无碰撞';
+            tcoll.className = res.trajectory_collisions > 0 ? 'value fail' : 'value success';
+        }
+        document.getElementById('st-time-' + sfx).textContent =
+            typeof res.solve_time_ms === 'number' ? res.solve_time_ms.toFixed(0) + ' ms' : '-';
+    }
+    if (resL && resL.joint_angles) updateJointAnglesDisplay(resL.joint_angles);
+    
+    // 写入求解日志 (双侧各自统计)
+    logSolve(resL, 'l');
+    logSolve(resR, 'r');
+}
+
+let solveLogHistory = { l: [], r: [] }; // 每侧最近 100 条记录
+document.getElementById('reset-stats').onclick = () => {
+    solveLogHistory = {l:[],r:[]};
+    for (const id of ['error','time','success','count'])
+        document.getElementById('log-stats-'+id).textContent = '-';
+};
+
+function logSolve(result, side) {
+    // 防御性检查
+    if (!result || typeof result.position_error !== 'number') return;
+    
+    const err_mm = result.position_error * 1000;
+    const time_ms = (typeof result.solve_time_ms === 'number') ? result.solve_time_ms : null;
+    
+    const hist = solveLogHistory[side];
+    hist.push({ err: err_mm, time: time_ms, success: !!result.success, method:result.requested_method });
+    if (hist.length > 100) hist.shift();
+    
+    // 合并两侧统计
+    const all = [...solveLogHistory.l, ...solveLogHistory.r];
+    const errs = all.map(h => h.err);
+    const times = all.filter(h => h.time !== null).map(h => h.time);
+    const successCount = all.filter(h => h.success).length;
+    const total = all.length;
+    
+    const stats = (arr) => {
+        if (arr.length === 0) return '-';
+        const sorted = [...arr].sort((a, b) => a - b);
+        const sum = arr.reduce((a, b) => a + b, 0);
+        const avg = sum / arr.length;
+        const med = sorted.length % 2 === 0 ? (sorted[sorted.length/2-1] + sorted[sorted.length/2]) / 2 : sorted[Math.floor(sorted.length/2)];
+        return `min=${sorted[0].toFixed(2)} max=${sorted[sorted.length-1].toFixed(2)} avg=${avg.toFixed(2)} med=${med.toFixed(2)}`;
+    };
+    
+    // 更新统计
+    document.getElementById('log-stats-error').textContent = stats(errs);
+    document.getElementById('log-stats-time').textContent = times.length > 0 ? stats(times) : '-';
+    document.getElementById('log-stats-count').textContent = `${total} 条 (双侧各最近100条)`;
+    document.getElementById('log-stats-success').textContent = [...new Set(all.map(h=>h.method))].map(method => {
+        const h = all.filter(r=>r.method===method); return `${METHOD_NAMES[method] || method} ${h.filter(r=>r.success).length}/${h.length}`;
+    }).join(' | ') + '（本次交互样本）';
+}
+
+function updateJointAnglesDisplay(angles) {
+    const container = document.getElementById('joint-angles');
+    let html = '';
+    for (let i = 0; i < angles.length; i++) {
+        const deg = (angles[i] * 180 / Math.PI).toFixed(1);
+        const barWidth = Math.min(100, Math.abs(angles[i]) / Math.PI * 100);
+        const barColor = angles[i] >= 0 ? '#4ade80' : '#f87171';
+        html += `<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+            <span style="width:20px;color:#a8d8ea;">J${i+1}</span>
+            <div style="flex:1;height:6px;background:#1a1a2e;border-radius:3px;position:relative;">
+                <div style="width:${barWidth}%;height:100%;background:${barColor};border-radius:3px;"></div>
+            </div>
+            <span style="width:55px;text-align:right;">${deg}°</span>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+// ========== 重置 (双臂同时回 home, 起始位姿对齐) ==========
+async function resetRobot() {
+    if (isAnimating) return;
+    loadedStartQ = null;
+    loadedTargetQuat = null;
+    clearTrail();
+    const response = await fetch('/api/reset', { method: 'POST' });
+    const data = await response.json();
+    updateRobotPose(data.link_transforms);
+    updateEEMarker(data.ee_position, data.ee_orientation);
+    updateJointAnglesDisplay(data.joint_angles);
+    for (const sfx of SIDES) {
+        for (const id of ['st-status', 'st-poserr', 'st-orierr', 'st-mindist', 'st-coll', 'st-trajcoll', 'st-time']) {
+            const el = document.getElementById(id + '-' + sfx);
+            el.textContent = '-';
+            el.className = 'value';
+        }
+    }
+}
+
+// ========== 动画循环 ==========
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    if (targetMarker.visible) {
+        const s = 1 + 0.2 * Math.sin(Date.now() * 0.003);
+        targetMarker.scale.setScalar(s);
+        targetMarkerR.scale.setScalar(s);
+    }
+    renderer.render(scene, camera);
+}
+
+// ========== RL 状态检查与训练 ==========
+async function checkRLStatus() {
+    try {
+        const resp = await fetch('/api/rl_status');
+        const data = await resp.json();
+        const statusEl = document.getElementById('rl-model-status');
+        const progressEl = document.getElementById('rl-train-progress');
+        const trainBtn = document.getElementById('btn-train-rl');
+
+        if (data.model_available) {
+            statusEl.innerHTML = '<span style="color:#4ade80;">✓ 模型已就绪，可直接使用</span>';
+            trainBtn.disabled = false;
+            trainBtn.textContent = '重新训练 RL 模型';
+        } else {
+            statusEl.innerHTML = '<span style="color:#f87171;">✗ 尚未训练模型</span>';
+            trainBtn.disabled = false;
+            trainBtn.textContent = '训练 RL 模型 (PPO)';
+        }
+
+        if (data.training) {
+            statusEl.innerHTML = '<span style="color:#fbbf24;">⏳ 训练中...</span>';
+            trainBtn.disabled = true;
+            trainBtn.textContent = '训练中...';
+            progressEl.textContent = data.progress || '';
+            // 轮询状态
+            setTimeout(checkRLStatus, 3000);
+        } else {
+            progressEl.textContent = data.error ? '错误: ' + data.error : '';
+            if (data.progress && data.progress.includes('完成')) {
+                progressEl.innerHTML = '<span style="color:#4ade80;">' + data.progress + '</span>';
+            }
+        }
+    } catch (err) {
+        document.getElementById('rl-model-status').textContent = '无法连接后端';
+    }
+}
+
+document.getElementById('btn-train-rl').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-train-rl');
+    btn.disabled = true;
+    btn.textContent = '提交训练中...';
+    try {
+        const resp = await fetch('/api/train_rl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ timesteps: 500000 })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('rl-train-progress').innerHTML =
+                '<span style="color:#fbbf24;">训练已启动，请等待 (约10-30分钟)...</span>';
+            setTimeout(checkRLStatus, 3000);
+        } else {
+            document.getElementById('rl-train-progress').innerHTML =
+                '<span style="color:#f87171;">' + (data.error || '启动失败') + '</span>';
+            btn.disabled = false;
+        }
+    } catch (err) {
+        document.getElementById('rl-train-progress').textContent = '请求失败: ' + err.message;
+        btn.disabled = false;
+    }
+});
+
+// ========== 避障自动演示 (双臂对比: 左=所选方法, 右=DLS) ==========
+async function startAutoDemoAvoid() {
+    const btn = document.getElementById('btn-auto-demo');
+    const statusEl = document.getElementById('auto-demo-status');
+    const [methodL, methodR] = comparisonMethods();
+
+    // 加载预筛选案例集
+    let cases = [];
+    try {
+        const resp = await fetch('/static/demo_avoid_cases.json');
+        cases = await resp.json();
+    } catch (err) {
+        statusEl.innerHTML = '<span style="color:#f87171;">加载避障案例失败</span>';
+        return;
+    }
+    if (!cases.length) {
+        statusEl.innerHTML = '<span style="color:#f87171;">案例集为空, 请检查 static/demo_avoid_cases.json 是否缺失</span>';
+        return;
+    }
+
+    let demoIndex = 0;
+    autoDemoRunning = true;
+    document.getElementById('ik-method').disabled = true;
+    updateComparisonLabels(methodL, methodR);
+    btn.textContent = '停止演示';
+    btn.style.background = '#dc2626';
+    let successL = 0, successR = 0, totalCount = 0;
+    const totalCases = cases.length;
+
+    async function runNextAvoid() {
+        if (!autoDemoRunning || demoIndex >= totalCases) {
+            stopAutoDemo();
+            statusEl.innerHTML = `<span style="color:#4ade80;">演示完成! 左(${METHOD_NAMES[methodL]}): ${successL}/${totalCount} | 右(${METHOD_NAMES[methodR]}): ${successR}/${totalCount}</span>`;
+            return;
+        }
+        const c = cases[demoIndex++];
+        totalCount++;
+        let solvingThisCase = false;
+        try {
+            // 1. 设置目标位姿
+            setTargetValues(c.target_pos[0], c.target_pos[1], c.target_pos[2]);
+            setTargetRPY(c.target_rpy[0], c.target_rpy[1], c.target_rpy[2]);
+            // Keep save/export and manual replay on the displayed demo scene.
+            // setTargetRPY clears the quaternion, so preserve it afterwards.
+            loadedStartQ = c.start_q ? [...c.start_q] : null;
+            loadedTargetQuat = c.target_quat ? [...c.target_quat] : null;
+            updateTargetMarker(c.target_pos, loadedTargetQuat || rpyToQuaternion(getTargetRPY()));
+
+            // 2. 渲染该案例的障碍物 (两侧同步)
+            currentObstacles = c.obstacles || [];
+            renderObstacles();
+
+            // 3. 起始位姿对齐: 双臂使用该正式评测场景的 start_q
+            let resetData;
+            if (c.start_q) {
+                resetData = await (await fetch('/api/forward_kinematics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ joint_angles: c.start_q })
+                })).json();
+                updateRobotPose(resetData.link_transforms);
+                updateEEMarker(resetData.position, resetData.orientation);
+                updateJointAnglesDisplay(c.start_q);
+            } else {
+                resetData = await (await fetch('/api/reset', { method: 'POST' })).json();
+                loadedStartQ = resetData.joint_angles ? [...resetData.joint_angles] : null;
+                updateRobotPose(resetData.link_transforms);
+                updateEEMarker(resetData.ee_position, resetData.ee_orientation);
+                if (loadedStartQ) updateJointAnglesDisplay(loadedStartQ);
+            }
+
+            statusEl.textContent = `[${totalCount}/${totalCases}] 正式评测采样起始位停留中...`;
+            await new Promise(r => setTimeout(r, 5000));
+            if (!autoDemoRunning) return;
+
+            statusEl.textContent = `[${totalCount}/${totalCases}] 左:${METHOD_NAMES[methodL]} vs 右:${METHOD_NAMES[methodR]} 求解中...`;
+
+            // 4. 双方法并行求解
+            isSolving = true;
+            solvingThisCase = true;
+            const [resL, resR] = await Promise.all([
+                solveAvoid(c.target_pos, methodL, loadedStartQ, loadedTargetQuat),
+                solveAvoid(c.target_pos, methodR, loadedStartQ, loadedTargetQuat),
+            ]);
+            if (resL || resR) {
+                // 移动模式: 平滑=逐帧慢速播放 (80ms/帧), 瞬时=跳过动画直接到位
+                const moveMode = document.querySelector('input[name="move-mode"]:checked').value;
+                if (moveMode === 'smooth') {
+                    await animateDualTrajectory(resL && resL.trajectory, resR && resR.trajectory, resL, resR, 80);
+                }
+                if (resL && resL.link_transforms) updateRobotPose(resL.link_transforms, 'l');
+                if (resR && resR.link_transforms) updateRobotPose(resR.link_transforms, 'r');
+                updateDualStatus(resL, resR, methodL, methodR);
+                if (resL && resL.success) successL++;
+                if (resR && resR.success) successR++;
+                const collL = resL && resL.n_collisions > 0 ? `碰撞${resL.n_collisions}` : '无碰撞';
+                const collR = resR && resR.n_collisions > 0 ? `碰撞${resR.n_collisions}` : '无碰撞';
+                statusEl.textContent = `[${totalCount}/${totalCases}] 左:${successL}✓(${collL}) | 右:${successR}✓(${collR}) — 终止位停留 8s`;
+            }
+            // 终止点停留 8 秒方便观察, 再进入下一案例
+            if (autoDemoRunning) autoDemoTimer = setTimeout(runNextAvoid, 8000);
+        } catch (err) {
+            console.error('避障演示错误:', err);
+            statusEl.textContent = `[${totalCount}/${totalCases}] 错误: ${err.message}`;
+            if (autoDemoRunning) autoDemoTimer = setTimeout(runNextAvoid, 8000);
+        } finally {
+            if (solvingThisCase) isSolving = false;
+            document.getElementById('ik-method').disabled = autoDemoRunning || isSolving;
+        }
+    }
+
+    runNextAvoid();
+}
+
+// ========== 自动演示模式 ==========
+let autoDemoTimer = null;
+let autoDemoRunning = false;
+
+async function startAutoDemo() {
+    if (autoDemoRunning) {
+        stopAutoDemo();
+        return;
+    }
+    if (isAnimating || isSolving) return;
+    await startAutoDemoAvoid();
+}
+
+function stopAutoDemo() {
+    autoDemoRunning = false;
+    document.getElementById('ik-method').disabled = isSolving;
+    if (autoDemoTimer) {
+        clearTimeout(autoDemoTimer);
+        autoDemoTimer = null;
+    }
+    const btn = document.getElementById('btn-auto-demo');
+    btn.textContent = '开始自动演示';
+    btn.style.background = '#7c3aed';
+}
+
+// ========== 事件绑定 ==========
+document.getElementById('btn-solve').addEventListener('click', solveIK);
+document.getElementById('btn-reset').addEventListener('click', resetRobot);
+document.getElementById('btn-auto-demo').addEventListener('click', startAutoDemo);
+document.getElementById('btn-add-obstacles').addEventListener('click', generateRandomObstacles);
+document.getElementById('btn-clear-obstacles').addEventListener('click', clearObstacles);
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') solveIK();
+    if (e.key === 'r' || e.key === 'R') resetRobot();
+    if (e.key === 'a' || e.key === 'A') startAutoDemo();
+});
+
+// ========== 初始化 ==========
+async function init() {
+    initScene();
+    
+    // 默认选择 Panda + RL 避障方法
+    document.getElementById('robot-select').value = 'panda';
+    document.getElementById('ik-method').value = 'rl_avoid';
+    updateComparisonLabels(...comparisonMethods());
+    document.getElementById('method-desc').textContent = METHOD_DESC['rl_avoid'];
+    document.getElementById('orientation-group').style.display = '';
+    document.getElementById('jac-mode-group').style.display = 'none';
+    document.getElementById('rl-train-group').style.display = 'none';
+    
+    // 获取初始机器人信息
+    try {
+        const resp = await fetch('/api/robot_info');
+        currentRobotInfo = await resp.json();
+        
+        updateTargetBounds(currentRobotInfo.reach_bounds);
+        updatePresets(currentRobotInfo.presets);
+        
+        await loadRobotModel(currentRobotInfo);
+        
+        const stateResp = await fetch('/api/get_state');
+        const stateData = await stateResp.json();
+        updateRobotPose(stateData.link_transforms);
+        updateEEMarker(stateData.ee_position, stateData.ee_orientation);
+        updateJointAnglesDisplay(stateData.joint_angles);
+        
+        const defaultPreset = currentRobotInfo.presets ? currentRobotInfo.presets[0] : null;
+        if (defaultPreset) {
+            setTargetValues(defaultPreset.pos[0], defaultPreset.pos[1], defaultPreset.pos[2]);
+            updateTargetMarker(defaultPreset.pos, rpyToQuaternion(getTargetRPY()));
+        }
+    } catch (err) {
+        console.error('初始化失败:', err);
+    }
+    
+    animate();
+}
+
+init();
+</script>
+</body>
+</html>

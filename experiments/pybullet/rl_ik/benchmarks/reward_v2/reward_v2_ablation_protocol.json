@@ -1,0 +1,87 @@
+{
+  "experiment_name": "Old Reward/Credit vs V2-Balanced Reward/Credit",
+  "created_date": "2026-08-14",
+  "status": "PREREGISTERED_BEFORE_TRAINING",
+  "interpretation": {
+    "old": "Old reward and post-collision episode continuation",
+    "v2_balanced": "V2-Balanced reward and first-hit collision termination",
+    "not_claimed": "This is not a reward-number-only ablation because credit assignment and episode handling also change."
+  },
+  "train": {
+    "base_seed": 3000000000,
+    "episode_seed_formula": "3000000000 + episode_index",
+    "algorithm_seed": 20260817,
+    "timesteps_per_branch": 20480,
+    "rollout_size": 1024,
+    "complete_rollouts": 20,
+    "checkpoint_steps": [5120, 10240, 15360, 20480],
+    "status": "LOCKED_FOR_THIS_ABLATION"
+  },
+  "dev": {
+    "base_seed": 2026081300,
+    "episode_count": 1000,
+    "first_seed": 2026081300,
+    "last_seed": 2026082299,
+    "status": "AVAILABLE_FOR_DEVELOPMENT"
+  },
+  "holdout": {
+    "base_seed": 2026090100,
+    "episode_count": 1000,
+    "first_seed": 2026090100,
+    "last_seed": 2026091099,
+    "status": "LOCKED_UNSEEN",
+    "run_in_this_task": false
+  },
+  "seed_sets_pairwise_disjoint": true,
+  "common_initialization": {
+    "path": "models/residual_relative_ablation/relative_residual_common_init.zip",
+    "sha256": "EA71E3949D676A033CE7C81062B355E083FEFDBD048E189784D3FA27545A795F",
+    "created_without_learn": true
+  },
+  "representation_and_control": {
+    "relation_mode": "robot_centered",
+    "robot_keypoint_link_indices": [0, 2, 3, 4, 6, 8],
+    "residual_scale": 0.05,
+    "residual_penalty_weight": 0.0001,
+    "action_composition": "headroom"
+  },
+  "ppo": {
+    "learning_rate": 0.0001,
+    "n_steps": 1024,
+    "batch_size": 256,
+    "n_epochs": 10,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.2,
+    "device": "cpu",
+    "net_arch": {"pi": [256, 256], "vf": [256, 256]},
+    "activation": "Tanh",
+    "log_std_init": -2.0
+  },
+  "primary_models": {
+    "old": "models/reward_v2_ablation/old_reward/final.zip",
+    "v2": "models/reward_v2_ablation/v2_balanced/final.zip"
+  },
+  "neutral_dev_evaluation": {
+    "episodes": 1000,
+    "base_seed": 2026081300,
+    "environment": "Robot-Centered Relative base environment without RewardV2Wrapper",
+    "reward_ignored": true
+  },
+  "ik_protection_threshold_10mm": 0.857,
+  "holdout_unlock_gate": {
+    "gate_a": {
+      "v2_ik10_at_least": 0.857,
+      "v2_minus_old_cf10_at_least": 0.02,
+      "cf10_bootstrap_ci_lower_strictly_above": 0.0,
+      "v2_minus_old_collision_at_most": 0.005
+    },
+    "gate_b": {
+      "v2_ik10_at_least": 0.857,
+      "v2_minus_old_collision_at_most": -0.02,
+      "collision_bootstrap_ci_upper_strictly_below": 0.0,
+      "v2_minus_old_cf10_at_least": -0.005
+    },
+    "holdout_remains_locked_even_if_passed_in_this_task": true
+  }
+}

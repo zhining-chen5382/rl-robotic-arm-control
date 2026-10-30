@@ -18,7 +18,7 @@ The software also provides scene save/load, trajectory inspection, pose errors, 
 
 The selected video is the current demo asset; additional screenshots and a longer recording are optional. The [recording guide](recording_guide.md) is retained for a possible future replacement, not as unfinished work required for this portfolio version.
 
-The README uses an ordinary relative link to the repository file. This avoids assuming that every GitHub account or Markdown context will provide an inline video player. The actual playback behavior should be checked after the authorized upload.
+The README offers a GitHub video-attachment preview and a relative link to the unchanged original recording. Playback availability should be checked when the repository is published or its visibility changes.
 
 **Scope:** offline kinematic simulation and discrete geometric checks, without a continuous-motion or physical-robot safety guarantee.
 

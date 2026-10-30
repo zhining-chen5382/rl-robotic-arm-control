@@ -1,0 +1,11 @@
+# Tested Windows Python 3.11 CPU demonstration environment.
+numpy==2.2.6
+torch==2.12.1
+mujoco==3.11.0
+jax==0.10.2
+jaxlib==0.10.2
+flask==3.1.3
+gymnasium==1.3.0
+pyyaml==6.0.3
+trimesh==5.0.0
+scipy==1.17.1

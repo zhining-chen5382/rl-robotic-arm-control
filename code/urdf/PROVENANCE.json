@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "source_package": {
+    "distribution": "pybullet",
+    "version": "3.2.5",
+    "asset_prefix": "pybullet_data/franka_panda",
+    "metadata_home_page": "https://github.com/bulletphysics/bullet3",
+    "package_metadata_license": "zlib"
+  },
+  "asset_license": {
+    "spdx_id": "Apache-2.0",
+    "file": "LICENSE.txt",
+    "scope": "The listed franka_panda resources are distributed with this asset-directory license; the package-wide metadata separately states zlib."
+  },
+  "verification": {
+    "date": "2026-10-29",
+    "method": "Each listed candidate file is byte-identical by SHA-256 to the corresponding installed PyBullet 3.2.5 resource, and its SHA-256 also matches that distribution RECORD entry.",
+    "file_count": 30,
+    "inventory": "28 mesh/material/texture files, LICENSE.txt, and panda.urdf",
+    "scope": "Only the files listed below. This record makes no claim about an upstream Git revision or unlisted files."
+  },
+  "files": [
+    {
+      "path": "LICENSE.txt",
+      "sha256": "59899c6091b540582ed617e8eeaac4919dc985ccfc35459ee9752b699be5205b",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/finger.obj",
+      "sha256": "c05dee2e2770ac3d45a097cec4a9d758e279ebdb7dc550eb249571c4690a6476",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/hand.obj",
+      "sha256": "a216bedc742a736f2c6cab010c6014475fe5f7b5ed53e371509adf885df618a2",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link0.obj",
+      "sha256": "d29233f03537b6ee92a6861d4139290960325c2bacf9a640ab7935a5539c653f",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link1.obj",
+      "sha256": "0879335b20930eccccdc7d2565553895589f9125d4c8c0d462ad0f74f17e7472",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link2.obj",
+      "sha256": "cfca62e5846d3ba6db8be3740fc2219454401f1048db11a78bd9ec8f30cdc128",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link3.obj",
+      "sha256": "22235fb3676b5cb45a2f512065fab94fecf052a767cddfaed62cbb6d1efcf1f8",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link4.obj",
+      "sha256": "64b5914ef159149f87b767ff0eae4db41b9c267aecdddf2816ff25726fa0e6f2",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link5.obj",
+      "sha256": "ff8d4bb5ab506b8cf621f44b928be7714dff86b669a92909b8d4f71c5b01597e",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link6.mtl",
+      "sha256": "569f88e12d5672c190e2aa14526fcc16b609c25bd5ade907ddb83106ac61e78c",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link6.obj",
+      "sha256": "e1dc8bbca8690944e6331f5a108d49c363eeec179b56a9f913541a541e6a2cfc",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/collision/link7.obj",
+      "sha256": "675a784e949b2b47894f1965016bd56b992b136bd90e1a62e832f49b4a55b240",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/colors.png",
+      "sha256": "bc8c81d8e9723de374dd718a1ddcd91dfe6dfe1e371b18383f6d084a13fe525b",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/finger.mtl",
+      "sha256": "525d16f9a1338ebc2f3c062b30e462a279356aa4fe242617d39e05fa6926c27b",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/finger.obj",
+      "sha256": "c6959401c281e6d5b4486f08072140b6fdb3461678face301ac448cec06322d3",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/hand.mtl",
+      "sha256": "da2fb08fb2efec231cfd38b710e657b3ef04d3d3cf18082d3d043080dd6c79df",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/hand.obj",
+      "sha256": "3c95c6f99024842a8b9e73629dacc30ac5ee459feb0dbcc16df765fd27620584",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link1.mtl",
+      "sha256": "8c6e1b7fe3a382b872c986cfb3601e79b701afb7b4bfc72dcd6abd4b31f9d0f5",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link1.obj",
+      "sha256": "e0ec1bec9432a46f797e912cd8165798e62ebfd85c0807dce142bd6b9a768cd7",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link2.mtl",
+      "sha256": "e7821edf4876534ddeb9cdc789453e6473e2f1b9d33747f036005788b83199da",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link2.obj",
+      "sha256": "a1a41ada6d6cb8c51a8d0d19db9cadea101493842a52db75529e7ba0d4592904",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link3.mtl",
+      "sha256": "c2648eae04bf57f48100234ada9400156b1867d0fc2dbda2606bb786d6cfec51",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link3.obj",
+      "sha256": "82f81c15c236a41918dade0241ce40e59c4a0ee7fb08985f3a934380a8f7f594",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link4.mtl",
+      "sha256": "aa5e228aca4026e34e69dc9eb80bed96cc7d81dae5595984c16b464de5ba5963",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link4.obj",
+      "sha256": "91f36ecba40ecce6c169ede6d152a6c8853ee886e2b145ef6c5865cc9d5516b8",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link5.mtl",
+      "sha256": "1d44e731edacef0b66d7813468107877d05a12893f363ce3a0985c8305f404f3",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link5.obj",
+      "sha256": "10d084e6f728af7d291403f0359373c121e87785b177e5c6df8a7e1e88077f11",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link6.mtl",
+      "sha256": "78299752f3c28e87c19f5456e851423de647fbb065f8d88332c1f72ba5729b4c",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "meshes/visual/link6.obj",
+      "sha256": "7d6c29421e8066761c993a519474eb58f851885387cc2ad5a606f96eb428f059",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    },
+    {
+      "path": "panda.urdf",
+      "sha256": "9c27cf846302e26a1d3a44ccfd4dd2dbba89cccc9f17b96b6bd1f8bceedd1ff0",
+      "matches_installed_file": true,
+      "matches_distribution_record": true
+    }
+  ]
+}

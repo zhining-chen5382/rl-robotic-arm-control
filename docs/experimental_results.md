@@ -28,7 +28,7 @@ Evidence is described at three levels:
 - **Archived measurement:** an existing aggregate JSON or stdout record supports the number, but does not allow every episode to be reconstructed from the retained artifact.
 - **Unverified report:** a later description has no matching retained measurement. It is excluded from verified tables and figures.
 
-The tables use stable experiment identifiers, with the model, denominator, and criterion supplied alongside each result. Raw logs and model weights are not included in this documentation package.
+The tables use stable experiment identifiers, with the model, denominator, and criterion supplied alongside each result. The source candidate includes the v30 best inference checkpoint and selected aggregate heatmap data. Other historical checkpoints and raw internal logs are excluded; the included v30 policy cannot substitute for those experiments' original models.
 
 ## 2. Base pose IK: precision depends on the criterion
 

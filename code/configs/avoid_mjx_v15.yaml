@@ -1,0 +1,141 @@
+# v15: 从零训方案 (方案2: 混合课程防遗忘) + PPO 效率优化
+#
+# 背景: v14 三级硬切课程从零 50M 结果 — 多障碍严格 80.8% / 无障碍 57.4%,
+#      全面不如 v13 冠军 (85.7% / 88.5%)。抽查曲线定位两个病灶:
+#        1) 打底太薄: 无障碍只给 10M, 爬到 61% 就被切走
+#        2) 灾难性遗忘: 后 25M 纯障碍训练把无障碍能力从 71% 磨到 57%
+#
+# v15 相对 v14 的改动 (奖励/观测/网络/刹车全不动):
+#   1) 课程改为"混合阶段": 有障碍阶段混入无障碍回合 (n_min=0),
+#      全程持续排练纯 IK 能力, 根治遗忘; 打底阶段加长到 12.5M
+#        - 无障碍 IK    0~12.5M (25%): n=0, 打底爬到高成功率
+#        - 单障碍混合   12.5~25M (25%): n=0~1, 一半回合保持纯 IK
+#        - 多障碍混合   25~50M (50%): n=0~3, 恒留 25% 无障碍回合
+#      (env_mjx.py 按 rng.integers(n_min, n_max+1) 逐世界采样, 原生支持混合)
+#   2) PPO n_epochs 10→5: 上轮实测瓶颈是 CPU 侧 PPO 更新
+#      (每迭代 2560 次小批量梯度步, GPU 利用率仅 20~40% 在等 CPU);
+#      减半梯度步数。batch_size 保持 1024 不动
+#      (v4 时代实测 batch 4096 避障学不会, 不重蹈覆辙)。
+#   3) model_name → panda_ppo_ik_avoid_v15, timesteps 50M (从零)
+#
+# 对标基线: v13 champion 多障碍 n=1000 严格 85.7%/轨迹碰撞 8.4%/无障碍 88.5%
+reward:
+  task_base: 2.006
+  task_scale: 1000.0
+  task_diff: true             # v8: 任务项势能差, 消除早撞套利 (其余全部 v6 原值)
+  w_progress: 10.0
+  w_safe: 2.0                 # v4: 0.6→2.0, 配合 safe_margin 扩大强化早期斥力
+  w_collision: 200.0          # v4: 50→200, 对抗任务奖励主导 (历史教训)
+  w_joint_limit: 1.0
+  w_smooth: 0.05
+  step_penalty: 0.0005
+  success_reward: 100.0
+  w_orient_progress: 5.0      # v4: 姿态线性进步塑形, 修末端姿态卡 3~6° 问题
+env:
+  robot_id: panda
+  max_steps: 100
+  pos_tolerance: 0.005       # 训练终止 5mm < 评测判据 10mm, 保证训练达标线严于评测及格线
+  orient_tolerance_deg: 3.0
+  safe_margin: 0.1            # v4: 0.03→0.1, 安全塑形提前到 10cm 生效
+  success_margin: 0.015
+  min_action_scale: 0.003     # v4: 0.001→0.003, 保障姿态精调步长下限
+  max_action_span: 0.49
+  orient_scale_weight: 0.5    # v4: 0.2→0.5, 位置收敛后步长由姿态误差驱动
+  brake_margin: 0.35          # v13: 0.15→0.35 (>0.49×0.6 远端力臂上界, 位移≤剩余距离)
+  brake_floor: 0.05           # v13: 0.25→0.05, 触底仍留最小精调步
+  brake_mode: per_joint       # v13: 逐关节按各自远端连杆组最近距离刹车
+  obs_obstacle_hint: true     # v4: 观测 +4 维 (最近障碍方向+距离)
+  obs_safe_joint_dir: true    # v6 新增: 观测 +7 维 (关节空间安全方向)
+  dist_clip: 0.5
+  target_margin: 0.15
+  start_random_prob: 0.5
+  monitored_links:            # v6: +手指 (9/10), 修复手指穿障监控盲区
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 8
+  - 9
+  - 10
+  gui: false
+obstacle:
+  shapes:
+  - box
+  - sphere
+  - cylinder
+  box_half_extents:
+  - 0.02
+  - 0.1
+  sphere_radius:
+  - 0.03
+  - 0.1
+  cylinder_radius:
+  - 0.02
+  - 0.07
+  cylinder_height:
+  - 0.1
+  - 0.4
+  target_clearance: 0.12
+  start_clearance: 0.05
+  query_range: 1.0
+  max_attempts: 80
+  color:
+  - 0.85
+  - 0.3
+  - 0.25
+  - 0.85
+  region_x:
+  - -0.2
+  - 0.75
+  region_y:
+  - -0.65
+  - 0.65
+  region_z:
+  - 0.08
+  - 0.95
+  stages:                       # 方案2: 混合课程, 全程保留无障碍回合防遗忘
+  - name: 无障碍 IK
+    threshold: 0.0              # 0~12.5M (25%): 纯 IK 打底 (比 v14 加长 25%)
+    n_min: 0
+    n_max: 0
+  - name: 单障碍混合
+    threshold: 0.25             # 12.5~25M (25%): n=0~1, 一半回合仍是纯 IK 排练
+    n_min: 0
+    n_max: 1
+    dist_min: 0.12
+    dist_max: 0.3
+    clearance: 0.05
+  - name: 多障碍混合
+    threshold: 0.5              # 25~50M (50%): n=0~3, 恒留 25% 无障碍回合
+    n_min: 0
+    n_max: 3
+    dist_min: 0.1
+    dist_max: 0.35
+    clearance: 0.05
+train:
+  model_name: panda_ppo_ik_avoid_v15  # train_mjx 自动追加 _mjx 后缀
+  timesteps: 50000000                 # 从零训 50M; 评测自动跟随终局阶段=多障碍
+  n_envs: 48
+  learning_rate: 0.0002
+  lr_final: 1.0e-05
+  n_steps: 2048
+  batch_size: 1024                    # 保持 v4 原值 (4096 实测避障学不会, 历史教训)
+  n_epochs: 5                         # v15: 10→5, 减半 CPU 侧梯度步 (上轮瓶颈实测)
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  net_arch:
+  - 512
+  - 512
+  - 256
+  - 128
+  eval_freq_steps: 250000
+  n_eval_episodes: 20
+  checkpoint_freq_steps: 1000000
+  clip_reward: 20.0
+  spot_eval_n: 200                    # v6 新增: 训练中大样本抽查
+  spot_eval_freq_steps: 2500000       # 2.5/5/.../47.5M 抽查

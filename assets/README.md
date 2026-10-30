@@ -29,5 +29,5 @@ The original portfolio script `build_figures.py` regenerates all four diagrams/c
 - **Trajectory inspection screenshot:** identify the active model and distinguish terminal from recorded-trajectory collision metrics.
 - **Scene/export screenshot:** show scene reconstruction and exported metrics with personal paths and unrelated desktop content removed.
 
-The additional screenshots listed above are optional future assets. The selected recording retains its original interface, audio, and on-screen interaction statistics; it is not a new benchmark. The current application, model weights, and vendor resources are not distributed in this documentation package.
+The additional screenshots listed above are optional future assets. The selected recording retains its original interface, audio, and on-screen interaction statistics; it is not a new benchmark. The [source candidate](../code/README.md) separately includes the current application, one approved v30 inference checkpoint, and attributed resources; it does not establish the historical recording's exact checkpoint.
 

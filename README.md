@@ -55,6 +55,17 @@ The final application compares **PPO, PPO + DLS, DLS, and null-space avoidance**
 
 This made failures inspectable and individual scenes repeatable. The two robot views compare methods; they do not represent dual-arm coordination. [Demo overview](demo/README.md)
 
+## Explore the implementation
+
+The [main engineering source](code/README.md) selects **Panda / v30 best** and includes its inference checkpoint. In an isolated Python 3.11 environment:
+
+```bash
+python -m pip install -r code/requirements-demo-tested.txt
+python -B code/app.py
+```
+
+Open `http://127.0.0.1:5000`. [Run a saved scene](code/README.md#evaluate-a-scene) through the same four-method API, or inspect the [selected historical experiments](experiments/README.md). Historical policies require their own checkpoints; the v30 checkpoint does not replace them. [Source changes and validation](docs/source_release.md) · [Third-party provenance](THIRD_PARTY_NOTICES.md)
+
 ## Explore the project
 
 - [Research journey](docs/research_journey.md) — hypotheses, setbacks, and design choices
@@ -63,5 +74,5 @@ This made failures inspectable and individual scenes repeatable. The two robot v
 - [Engineering optimization](docs/engineering_optimization.md) — profiling and fixed-policy timing
 - [Contributions](docs/contributions.md) · [Limitations](docs/limitations.md)
 
-**Scope:** kinematic simulation and discrete sampled-state collision checks. Results do not establish torque-level dynamic control, continuous collision safety, or real-robot deployment. This documentation draft distributes no original robot-project source, weights, internal logs, or vendor assets.
+**Scope:** kinematic simulation and discrete sampled-state collision checks. Results do not establish torque-level dynamic control, continuous collision safety, or real-robot deployment. This source candidate preserves the research documents, selected implementations, and one approved inference checkpoint; raw internal archives and registration materials are excluded.
 

@@ -25,8 +25,7 @@
 # This filename exception does not approve other media or resolve company rights.
 !/assets/media/robot_arm_simulation.mp4
 
-# Original research archives, policies, raw experiment output, and robot assets
-# are outside this documentation package's current publication scope.
+# Generated research output and unselected binary artifacts.
 models/
 checkpoints/
 logs/
@@ -49,6 +48,21 @@ meshes/
 *.mcap
 *.db3
 *.log
+
+# Explicit source-release candidates; generated models remain ignored.
+!/code/models/
+/code/models/*
+!/code/models/README.md
+!/code/models/panda_ppo_ik_avoid_v30_risk_head_ft_mjx_best/
+/code/models/panda_ppo_ik_avoid_v30_risk_head_ft_mjx_best/*
+!/code/models/panda_ppo_ik_avoid_v30_risk_head_ft_mjx_best/best_model.zip
+!/code/urdf/
+!/code/urdf/**
+!/code/static/vendor/
+!/code/static/vendor/three/
+!/code/static/vendor/three/**
+/validation_outputs/
+/browser_profile/
 
 # Environments, caches, editor state, and temporary exports.
 .qa-browser/
