@@ -61,7 +61,7 @@ This is a small current-deployment evaluation, not a recreation of the historica
 
 Training is a separately invoked research workflow. `train_gpu.py` requires `--config`; it has no implicit default experiment. Set the world count, rollout length, seed, output model name, device and initialization deliberately. For risk-head fine-tuning, initialize from a compatible learned policy rather than freezing a randomly initialized reaching backbone.
 
-Only the v30 inference ZIP is supplied. It does not contain an optimizer, complete training state, or reward-normalization history. Initializing a new fine-tuning run from it is not an exact resume of the original experiment. The original v28-to-v30 training schedule is not claimed reproducible from this checkpoint alone. No training was performed for this candidate.
+Only the v30 inference ZIP is supplied. It does not contain an optimizer, complete training state, or reward-normalization history. Initializing a new fine-tuning run from it is not an exact resume of the original experiment. The original v28-to-v30 training schedule is not claimed reproducible from this checkpoint alone. No training was performed for this source release.
 
 `mjx/eval_mjx.py` and the optimization tools retain historical batch/default conventions. Use `scripts/evaluate_deployment.py` for the current application contract. Do not report a newly run historical tool as the original benchmark without matching its checkpoint and protocol.
 

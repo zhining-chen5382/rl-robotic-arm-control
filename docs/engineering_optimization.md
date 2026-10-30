@@ -68,7 +68,7 @@ An earlier project-reported summary described a change from 1068.9 to 57.3 ms. T
 
 ## Evidence and reproducibility boundary
 
-The retained evidence identifiers are `fast_original_current_ab_20260821_110945.json`, the `fast_original_current_ab.py` harness and its comparison helper, and `bench_quant_e2e_20260818_154804.json`. The source candidate includes the [NumPy comparison harness](../code/mjx/tests/fast_original_current_ab.py), its helpers, and [protocol notes](../experiments/v16_optimization/README.md). The original v16 checkpoint and raw internal timing logs are not included; the supplied v30 policy is a different experiment.
+The retained evidence identifiers are `fast_original_current_ab_20260821_110945.json`, the `fast_original_current_ab.py` harness and its comparison helper, and `bench_quant_e2e_20260818_154804.json`. This repository includes the [NumPy comparison harness](../code/mjx/tests/fast_original_current_ab.py), its helpers, and [protocol notes](../experiments/v16_optimization/README.md). The original v16 checkpoint and raw internal timing logs are not included; the supplied v30 policy is a different experiment.
 
 The timing record does not identify the CPU model, and the exact historical package/runtime environment was not preserved. The experiment has not been rerun for this portfolio. These measurements describe the retained runs and should not be treated as a hardware-independent latency guarantee or a current v30 performance claim.
 

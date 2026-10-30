@@ -1,10 +1,10 @@
 # Third-party components and source provenance
 
-The SIASUN supervisor's permission to publish the related algorithm source and the applicant's approval to include v30 best are recorded for this candidate. Team framework contributions remain acknowledged in [Contributions](docs/contributions.md).
+The SIASUN supervisor's permission to publish the related algorithm source and the applicant's approval to include v30 best are recorded for this public source release. Team framework contributions remain acknowledged in [Contributions](docs/contributions.md).
 
 No project-wide reuse license has been selected for the original project code or trained policy. Permission to publish a portfolio is distinct from granting all downstream reuse rights. Existing third-party licenses continue to apply to their components.
 
-| Component | Candidate location | Retained license / provenance |
+| Component | Repository location | Retained license / provenance |
 |---|---|---|
 | Three.js and selected loaders/controls | `code/static/vendor/three/` | [MIT license](code/static/vendor/three/LICENSE), retained verbatim |
 | Panda URDF and meshes | `code/urdf/` | [Apache 2.0 text](code/urdf/LICENSE.txt); 30 files match the PyBullet 3.2.5 distribution and its RECORD hashes |
@@ -20,6 +20,6 @@ An extra unverified Xacro file was excluded from the candidate. Runtime uses the
 
 The robot description and meshes are third-party assets, not original robot designs by the applicant. No UR5 assets, company registration documents, reference templates, local Python environment, or historical checkpoint collection is included.
 
-## Candidate modifications
+## Release modifications
 
-The current application adds explicit start-state validation, actual-start obstacle protection, state-consistent scene replay/export, dynamic comparison labels, a deployment evaluation CLI, and an explicit training configuration argument. Historical source selections are frozen copies and labelled separately. The original research workspace is preserved outside this candidate.
+The current application adds explicit start-state validation, actual-start obstacle protection, state-consistent scene replay/export, dynamic comparison labels, a deployment evaluation CLI, and an explicit training configuration argument. Historical source selections are frozen copies and labelled separately. The original research workspace is preserved outside this repository.

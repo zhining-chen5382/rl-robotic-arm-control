@@ -2,7 +2,7 @@
 
 [Portfolio](../README.md) · [Main source](../code/README.md) · [Historical experiments](../experiments/README.md)
 
-## What this candidate includes
+## What this repository includes
 
 The main engineering tree is selected from the later MuJoCo/JAX implementation. `deployment.py` fixes Panda, the v30 best policy, a 150-step solve horizon and the original 100-step observation scale. The approved inference ZIP is unchanged, with SHA-256 `d8f9db135291e3dde06d40b02c43f31eeba849c266896e890e794c441b0905b8`.
 

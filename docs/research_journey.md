@@ -48,7 +48,7 @@ That pattern led me to hypothesize that continuously pursuing a distant final ta
 
 I therefore introduced intermediate waypoints in a later research iteration, dividing longer target-reaching motions into smaller subgoals. My aim was to improve the stability of local solves and obstacle avoidance while progressing toward the final pose.
 
-My project records report approximately **93% simulation success** for that later version. Its original code and complete evaluation records are not included in this repository, so this remains a reported project outcome rather than an independently revalidated benchmark. I do not treat it as a direct comparison with the separate v15 or v30 experiments.
+In this later waypoint-assisted iteration, I observed approximately 93% simulation success, with success requiring target-pose attainment and no detected collisions under the evaluation checks used at the time. Its original code is not included in this repository, and the original evaluation logs are unavailable, so this remains a reported project outcome rather than an independently revalidated benchmark. I do not treat it as a direct comparison with the separate v15 or v30 experiments.
 
 ## 5. Profiling the complete solver
 
