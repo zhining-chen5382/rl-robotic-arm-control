@@ -15,7 +15,7 @@ I carried out this work during a robotics algorithm internship at **SIASUN**, wi
 | **Computational optimization** | Explored ONNX Runtime inference, profiled the complete solver, and optimized NumPy forward kinematics and geometry processing. Used a fixed-policy paired benchmark to check measured speed improvements against trajectories and outcomes. |
 | **Software development** | Independently developed the final interactive simulation and performance-evaluation application, integrating scene configuration, algorithm comparison, 3D trajectory inspection, numerical metrics, and scene/result export on top of the initial framework. |
 
-“Independently developed” describes my responsibility for the final application. The broader project builds on the team's starting framework, existing solver work, and third-party libraries and robot resources. It does not mean that I independently authored every underlying component or created the Panda model.
+The final application was my independent integration work, built on the team's initial framework and incorporating existing solver components and third-party resources, which are credited separately.
 
 ## The supervising team's role
 

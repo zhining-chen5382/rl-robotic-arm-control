@@ -22,7 +22,7 @@ Model version, scene distribution, horizon, pose tolerance, and collision conven
 
 The later v30 records (**EXP-DEPLOY-V30**), for example, report trajectory-safe success of **87.3%** and **85.2%** on the obstacle groups for seeds 2026 and 30303, with **7.9%** trajectory collision in each group. Their separate obstacle-free groups report **93.9%** and **93.5%** success. These are per-group, 1,000-scene logged summaries at a 150-step solve horizon, not evidence of approximately 93% success in multi-obstacle planning.
 
-The applicant also reports a historical waypoint-based method with approximately 93% success (**REPORT-WAYPOINT**). The matching implementation and original evaluation record are absent from the material reviewed for this portfolio. That result is identified as **applicant-reported historical work, currently unverified**. No waypoint algorithm, benchmark protocol, or reproduced result is invented to fill this gap.
+In a later waypoint-assisted iteration, I observed approximately 93% simulation success (`REPORT-WAYPOINT`). Because the original evaluation logs are unavailable, I report this historical result separately from benchmark results supported by retained experimental records. That iteration's complete implementation is not included here; its result is not directly comparable with v15 or v30.
 
 ## Evaluation and reproducibility gaps
 

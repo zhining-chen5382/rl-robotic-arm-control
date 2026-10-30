@@ -1,6 +1,6 @@
 # Third-party components and source provenance
 
-The SIASUN supervisor's permission to publish the related algorithm source and the applicant's approval to include v30 best are recorded for this public source release. Team framework contributions remain acknowledged in [Contributions](docs/contributions.md).
+The SIASUN supervisor's permission to publish the related algorithm source and the project author's approval to include v30 best are recorded for this public source release. Team framework contributions remain acknowledged in [Contributions](docs/contributions.md).
 
 No project-wide reuse license has been selected for the original project code or trained policy. Permission to publish a portfolio is distinct from granting all downstream reuse rights. Existing third-party licenses continue to apply to their components.
 
@@ -14,11 +14,11 @@ No project-wide reuse license has been selected for the original project code or
 
 ## Panda resource provenance
 
-The Panda URDF, 28 mesh/material/texture files, and license text match `pybullet_data/franka_panda` in the installed **PyBullet 3.2.5** distribution byte for byte, including its package RECORD SHA-256 entries. The package metadata identifies [bulletphysics/bullet3](https://github.com/bulletphysics/bullet3) as its upstream project. [Per-file provenance](code/urdf/PROVENANCE.json) records this check without local computer paths. This identifies a distribution version, not an invented upstream Git revision. The resource-specific Apache 2.0 text is retained; it differs from the Python package's overall zlib license metadata.
+The Panda URDF, 28 mesh/material/texture files, and license text match `pybullet_data/franka_panda` in the installed **PyBullet 3.2.5** distribution byte for byte, including its package RECORD SHA-256 entries. The package metadata identifies [bulletphysics/bullet3](https://github.com/bulletphysics/bullet3) as its upstream project. [Per-file provenance](code/urdf/PROVENANCE.json) records this check without local computer paths. This identifies a distribution version; the exact upstream Git revision is not established. The resource-specific Apache 2.0 text is retained; it differs from the Python package's overall zlib license metadata.
 
 An extra unverified Xacro file was excluded from the candidate. Runtime uses the expanded Panda URDF and the derived MJCF files. The derived MJCF transformations are documented by the retained conversion and hand/finger repair scripts.
 
-The robot description and meshes are third-party assets, not original robot designs by the applicant. No UR5 assets, company registration documents, reference templates, local Python environment, or historical checkpoint collection is included.
+The robot description and meshes are third-party assets with provenance and licenses documented above. No UR5 assets, company registration documents, reference templates, local Python environment, or historical checkpoint collection is included.
 
 ## Release modifications
 

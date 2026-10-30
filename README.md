@@ -53,7 +53,7 @@ PointNet and the earlier seven-action residual controllers are separate research
 
 The final application compares **PPO, PPO + DLS, DLS, and null-space avoidance** in the same scene. It supports obstacle configuration, 3D trajectory playback, position/orientation errors, terminal and sampled-trajectory collision metrics, scene save/load, and JSON/CSV export.
 
-This made failures inspectable and individual scenes repeatable. The two robot views compare methods; they do not represent dual-arm coordination. [Demo overview](demo/README.md)
+This made failures inspectable and individual scenes repeatable. The two robot views provide side-by-side comparisons of different control methods. [Demo overview](demo/README.md)
 
 ## Explore the implementation
 
