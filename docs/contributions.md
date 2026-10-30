@@ -15,8 +15,6 @@ I carried out this work during a robotics algorithm internship at **SIASUN**, wi
 | **Computational optimization** | Explored ONNX Runtime inference, profiled the complete solver, and optimized NumPy forward kinematics and geometry processing. Used a fixed-policy paired benchmark to check measured speed improvements against trajectories and outcomes. |
 | **Software development** | Independently developed the final interactive simulation and performance-evaluation application, integrating scene configuration, algorithm comparison, 3D trajectory inspection, numerical metrics, and scene/result export on top of the initial framework. |
 
-The final application was my independent integration work, built on the team's initial framework and incorporating existing solver components and third-party resources, which are credited separately.
-
 ## The supervising team's role
 
 The team defined the initial robotics problem, provided the software starting point, and supervised the internship. That support is part of the project's provenance. The portfolio focuses on the decisions I investigated and the engineering work I performed within that context.
@@ -27,7 +25,7 @@ The experiments ran on a **Franka Panda simulation model**. The SIASUN internshi
 
 The research branches have separate models and protocols. The [experimental results](experimental_results.md) preserve the hybrid refinement gain, later policy evaluation, and negative residual findings; the [optimization document](engineering_optimization.md) explains the fixed-policy timing comparison. These results demonstrate particular engineering decisions rather than universal improvement across one benchmark.
 
-I also reported a later waypoint-assisted iteration with approximately 93% simulation success. Its code and original evaluation are absent from the reviewed archive, so that result remains unverified and is excluded from verified performance claims.
+I investigated waypoint-assisted planning to structure longer target-reaching motions around intermediate subgoals.
 
 ## External tools and assets
 
@@ -35,4 +33,4 @@ The project uses established tools for specialized tasks: **PyBullet** and **MuJ
 
 The **Panda URDF, mesh resources, and derived simulation models** are robot assets, rather than original robot designs. Historical UR5 resources belong to an earlier platform branch. Third-party software, robot resources, and their licenses remain separate from my algorithm and application contributions.
 
-My SIASUN supervisor has explicitly permitted publication of the related algorithm source. This repository includes the selected implementations and the v30 best inference checkpoint approved for this portfolio. This permission does not turn the team's framework or third-party robot assets into my independent work. Third-party notices and remaining asset-provenance questions are recorded in [Third-party provenance](../THIRD_PARTY_NOTICES.md); the complete internal archive and registration materials are excluded.
+My SIASUN supervisor has explicitly permitted publication of the related algorithm source. This repository includes the selected implementations and the v30 best inference checkpoint approved for this portfolio. Team framework contributions and third-party assets are credited separately. Third-party notices and remaining asset-provenance questions are recorded in [Third-party provenance](../THIRD_PARTY_NOTICES.md); the complete internal archive and registration materials are excluded.

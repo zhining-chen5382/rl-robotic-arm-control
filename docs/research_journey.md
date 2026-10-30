@@ -64,7 +64,7 @@ These figures describe the fixed-policy NumPy geometry comparison. They are not 
 
 I independently developed the final interactive simulation and evaluation application on top of the team's initial framework, integrating the solver work with third-party simulation and visualization tools. The purpose was to make both successful solutions and failures easy to inspect and revisit.
 
-The application compares **PPO, PPO + DLS, DLS, and null-space avoidance** on a shared scene. Users can configure a target and obstacles, inspect the three-dimensional trajectory, examine pose errors and collision indicators, save and reload scenes, and export experiment JSON and metric CSV files. The two robot views compare methods; they do not represent cooperative dual-arm control.
+The application compares **PPO, PPO + DLS, DLS, and null-space avoidance** on a shared scene. Users can configure a target and obstacles, inspect the three-dimensional trajectory, examine pose errors and collision indicators, save and reload scenes, and export experiment JSON and metric CSV files. The two views show different control methods on the same simulated task.
 
 The integrated application uses a later structured-observation PPO policy with a risk-sensitive step-size head. Its v30 evaluation is a separate experiment from the v15 hybrid comparison and the v16 timing study. Fixed demonstration scenes and interface checks establish software behavior, rather than population-level success rates. **Evidence: `EXP-DEPLOY-V30`.**
 

@@ -6,7 +6,7 @@ This project demonstrates an engineering process for learning and evaluating col
 
 The retained implementation uses the Franka Panda model in offline simulation. The main batch environment updates joint configurations directly and evaluates forward kinematics and sampled geometry. It is a **kinematic IK and obstacle-avoidance environment**, rather than torque control with contact dynamics.
 
-The portfolio does not establish deployment on a physical robot. The simulation viewer, exported joint trajectories, and browser verification are software demonstrations. They do not measure actuator tracking, calibration error, communication latency, physical contact, or transfer from simulation to hardware. Internship context does not change this evidence boundary.
+The portfolio does not establish deployment on a physical robot. The simulation viewer, exported joint trajectories, and browser verification are software demonstrations. They do not measure actuator tracking, calibration error, communication latency, physical contact, or transfer from simulation to hardware.
 
 ## What “trajectory-safe success” means here
 

@@ -2,11 +2,11 @@
 
 **[Watch the original recording — 37 seconds](../assets/media/robot_arm_simulation.mp4)**
 
-The portfolio uses the applicant's existing screen recording **unchanged**. It shows the historical robotic-arm simulation interface, obstacle scenes, an RL/DLS comparison, joint-angle displays, and pose/collision metrics. The file is H.264 MP4, 2560 × 1516, at 30 frames per second. Its original audio is retained.
+The original 37-second screen recording shows the historical simulation interface, obstacle scenes, an RL/DLS comparison, joint-angle displays, and pose/collision metrics. The H.264 MP4 (2560 × 1516, 30 fps), including its original audio, is preserved unchanged.
 
-This is an archived software demonstration. The exact checkpoint and refinement mode cannot be established from the visible labels, so the clip is not identified as v30, a waypoint implementation, or a controlled evaluation. The rolling on-screen statistics are interaction history rather than the success rates reported in [Experimental results](../docs/experimental_results.md).
+The checkpoint and refinement mode cannot be identified from the visible labels. The clip is presented as a software demonstration; its rolling on-screen statistics are interaction history rather than the benchmark results reported in [Experimental results](../docs/experimental_results.md).
 
-No new robot execution, training, or recording was performed to prepare this media. The two displayed arms compare methods for one simulated task; they do not demonstrate cooperative dual-arm control.
+The two views show different control methods on the same simulated task.
 
 ## What the later documented application supports
 
@@ -16,9 +16,9 @@ The software also provides scene save/load, trajectory inspection, pose errors, 
 
 ## Media status
 
-The selected video is the current demo asset; additional screenshots and a longer recording are optional. The [recording guide](recording_guide.md) is retained for a possible future replacement, not as unfinished work required for this portfolio version.
+The 37-second recording is the selected demonstration asset. The [recording guide](recording_guide.md) is retained as a reference for future updates.
 
-The README offers a GitHub video-attachment preview and a relative link to the unchanged original recording. Playback availability should be checked when the repository is published or its visibility changes.
+The main README provides a GitHub video-attachment preview and a relative link to the unchanged original recording.
 
 **Scope:** offline kinematic simulation and discrete geometric checks, without a continuous-motion or physical-robot safety guarantee.
 

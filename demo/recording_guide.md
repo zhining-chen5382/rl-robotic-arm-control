@@ -4,7 +4,7 @@
 
 This guide plans a 60–90 second capture of the existing application. It was prepared from source inspection and retained artifacts: **no application was started and no new run, screenshot, or video was produced**. The earlier 16 method/scene checks and browser exports are historical functional evidence, not a fresh verification.
 
-Use an existing authorized local installation and available recorder. This portfolio does not contain runnable application source, models, robot assets, or scene inputs. No installation or training is needed for this recording plan.
+Use an existing authorized local installation and available recorder. If needed, follow the setup instructions in [Main engineering implementation](../code/README.md) to install dependencies and launch the application. The repository includes the application source, v30 inference checkpoint, and Panda simulation assets. Prepare or load a scene in the application; model training is not required for this recording plan.
 
 ## 1. Restore a reproducible scene
 
@@ -49,7 +49,7 @@ There is no right-method selector. Left-side PPO, hybrid, or null-space selectio
 
 The canvas labels are legacy fixed text: `左: RL 避障` and `右: DLS`. Hybrid may appear as `rl_avoid_dls` in the result table. Show the actual dropdown and add the caption **“Left: PPO + DLS refinement; right: plain DLS.”** Verify it against exported `scene.method` or `result.requested_method`; do not edit the application or its displayed results.
 
-These are two spatially offset views of one arm's task. Backend requests share serialized solver state; this is not cooperative dual-arm control or a parallel-throughput test.
+The two spatially offset views display one arm's task, with backend requests sharing serialized solver state.
 
 ## 4. Prepare a clean take
 

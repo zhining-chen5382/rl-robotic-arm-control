@@ -16,7 +16,7 @@ No project-wide reuse license has been selected for the original project code or
 
 The Panda URDF, 28 mesh/material/texture files, and license text match `pybullet_data/franka_panda` in the installed **PyBullet 3.2.5** distribution byte for byte, including its package RECORD SHA-256 entries. The package metadata identifies [bulletphysics/bullet3](https://github.com/bulletphysics/bullet3) as its upstream project. [Per-file provenance](code/urdf/PROVENANCE.json) records this check without local computer paths. This identifies a distribution version; the exact upstream Git revision is not established. The resource-specific Apache 2.0 text is retained; it differs from the Python package's overall zlib license metadata.
 
-An extra unverified Xacro file was excluded from the candidate. Runtime uses the expanded Panda URDF and the derived MJCF files. The derived MJCF transformations are documented by the retained conversion and hand/finger repair scripts.
+An additional Xacro file with unconfirmed provenance is not included in this release. Runtime uses the expanded Panda URDF and the derived MJCF files. The derived MJCF transformations are documented by the retained conversion and hand/finger repair scripts.
 
 The robot description and meshes are third-party assets with provenance and licenses documented above. No UR5 assets, company registration documents, reference templates, local Python environment, or historical checkpoint collection is included.
 
